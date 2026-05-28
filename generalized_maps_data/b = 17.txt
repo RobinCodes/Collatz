@@ -1,0 +1,335 @@
+Results for maps f(x) = a*x + 17
+==================================================
+
+Map f(x) = 3*x + 17
+Converging odd seeds (500):
+[1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 159, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 187, 189, 191, 193, 195, 197, 199, 201, 203, 205, 207, 209, 211, 213, 215, 217, 219, 221, 223, 225, 227, 229, 231, 233, 235, 237, 239, 241, 243, 245, 247, 249, 251, 253, 255, 257, 259, 261, 263, 265, 267, 269, 271, 273, 275, 277, 279, 281, 283, 285, 287, 289, 291, 293, 295, 297, 299, 301, 303, 305, 307, 309, 311, 313, 315, 317, 319, 321, 323, 325, 327, 329, 331, 333, 335, 337, 339, 341, 343, 345, 347, 349, 351, 353, 355, 357, 359, 361, 363, 365, 367, 369, 371, 373, 375, 377, 379, 381, 383, 385, 387, 389, 391, 393, 395, 397, 399, 401, 403, 405, 407, 409, 411, 413, 415, 417, 419, 421, 423, 425, 427, 429, 431, 433, 435, 437, 439, 441, 443, 445, 447, 449, 451, 453, 455, 457, 459, 461, 463, 465, 467, 469, 471, 473, 475, 477, 479, 481, 483, 485, 487, 489, 491, 493, 495, 497, 499, 501, 503, 505, 507, 509, 511, 513, 515, 517, 519, 521, 523, 525, 527, 529, 531, 533, 535, 537, 539, 541, 543, 545, 547, 549, 551, 553, 555, 557, 559, 561, 563, 565, 567, 569, 571, 573, 575, 577, 579, 581, 583, 585, 587, 589, 591, 593, 595, 597, 599, 601, 603, 605, 607, 609, 611, 613, 615, 617, 619, 621, 623, 625, 627, 629, 631, 633, 635, 637, 639, 641, 643, 645, 647, 649, 651, 653, 655, 657, 659, 661, 663, 665, 667, 669, 671, 673, 675, 677, 679, 681, 683, 685, 687, 689, 691, 693, 695, 697, 699, 701, 703, 705, 707, 709, 711, 713, 715, 717, 719, 721, 723, 725, 727, 729, 731, 733, 735, 737, 739, 741, 743, 745, 747, 749, 751, 753, 755, 757, 759, 761, 763, 765, 767, 769, 771, 773, 775, 777, 779, 781, 783, 785, 787, 789, 791, 793, 795, 797, 799, 801, 803, 805, 807, 809, 811, 813, 815, 817, 819, 821, 823, 825, 827, 829, 831, 833, 835, 837, 839, 841, 843, 845, 847, 849, 851, 853, 855, 857, 859, 861, 863, 865, 867, 869, 871, 873, 875, 877, 879, 881, 883, 885, 887, 889, 891, 893, 895, 897, 899, 901, 903, 905, 907, 909, 911, 913, 915, 917, 919, 921, 923, 925, 927, 929, 931, 933, 935, 937, 939, 941, 943, 945, 947, 949, 951, 953, 955, 957, 959, 961, 963, 965, 967, 969, 971, 973, 975, 977, 979, 981, 983, 985, 987, 989, 991, 993, 995, 997, 999]
+Cycles (3):
+  Seed 1 -> cycle [1, 20, 10, 5, 32, 16, 8, 4, 2]
+  Seed 9 -> cycle [23, 86, 43, 146, 73, 236, 118, 59, 194, 97, 308, 154, 77, 248, 124, 62, 31, 110, 55, 182, 91, 290, 145, 452, 226, 113, 356, 178, 89, 284, 142, 71, 230, 115, 362, 181, 560, 280, 140, 70, 35, 122, 61, 200, 100, 50, 25, 92, 46]
+  Seed 17 -> cycle [17, 68, 34]
+
+Map f(x) = 5*x + 17
+Converging odd seeds (46):
+[1, 3, 9, 11, 17, 25, 29, 31, 35, 43, 51, 67, 71, 81, 85, 93, 99, 155, 177, 195, 199, 211, 221, 227, 241, 253, 255, 289, 315, 323, 447, 451, 459, 515, 547, 561, 563, 575, 611, 641, 723, 731, 739, 867, 895, 937]
+Cycles (4):
+  Seed 1 -> cycle [9, 62, 31, 172, 86, 43, 232, 116, 58, 29, 162, 81, 422, 211, 1072, 536, 268, 134, 67, 352, 176, 88, 44, 22, 11, 72, 36, 18]
+  Seed 17 -> cycle [17, 102, 51, 272, 136, 68, 34]
+  Seed 85 -> cycle [221, 1122, 561, 2822, 1411, 7072, 3536, 1768, 884, 442]
+  Seed 289 -> cycle [289, 1462, 731, 3672, 1836, 918, 459, 2312, 1156, 578]
+
+Map f(x) = 7*x + 17
+Converging odd seeds (4):
+[17, 85, 153, 697]
+Cycles (1):
+  Seed 17 -> cycle [17, 136, 68, 34]
+
+Map f(x) = 9*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 11*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 13*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 15*x + 17
+Converging odd seeds (6):
+[1, 17, 33, 153, 289, 545]
+Cycles (2):
+  Seed 1 -> cycle [1, 32, 16, 8, 4, 2]
+  Seed 17 -> cycle [17, 272, 136, 68, 34]
+
+Map f(x) = 17*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 19*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 21*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 23*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 25*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 27*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 29*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 31*x + 17
+Converging odd seeds (3):
+[17, 289, 561]
+Cycles (1):
+  Seed 17 -> cycle [17, 544, 272, 136, 68, 34]
+
+Map f(x) = 33*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 35*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 37*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 39*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 41*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 43*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 45*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 47*x + 17
+Converging odd seeds (1):
+[1]
+Cycles (1):
+  Seed 1 -> cycle [1, 64, 32, 16, 8, 4, 2]
+
+Map f(x) = 49*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 51*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 53*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 55*x + 17
+Converging odd seeds (2):
+[1, 9]
+Cycles (1):
+  Seed 1 -> cycle [1, 72, 36, 18, 9, 512, 256, 128, 64, 32, 16, 8, 4, 2]
+
+Map f(x) = 57*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 59*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 61*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 63*x + 17
+Converging odd seeds (2):
+[17, 561]
+Cycles (1):
+  Seed 17 -> cycle [17, 1088, 544, 272, 136, 68, 34]
+
+Map f(x) = 65*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 67*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 69*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 71*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 73*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 75*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 77*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 79*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 81*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 83*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 85*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 87*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 89*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 91*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 93*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 95*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 97*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 99*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 101*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 103*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 105*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 107*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 109*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 111*x + 17
+Converging odd seeds (1):
+[1]
+Cycles (1):
+  Seed 1 -> cycle [1, 128, 64, 32, 16, 8, 4, 2]
+
+Map f(x) = 113*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 115*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 117*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 119*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 121*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 123*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 125*x + 17
+Converging odd seeds (0):
+[]
+Cycles (0):
+
+Map f(x) = 127*x + 17
+Converging odd seeds (4):
+[1, 9, 17, 145]
+Cycles (2):
+  Seed 1 -> cycle [9, 1160, 580, 290, 145, 18432, 9216, 4608, 2304, 1152, 576, 288, 144, 72, 36, 18]
+  Seed 17 -> cycle [17, 2176, 1088, 544, 272, 136, 68, 34]
+
