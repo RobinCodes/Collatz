@@ -1,0 +1,878 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\hypersetup{
+  pdftitle={Formal Verification of a Collatz Residue Sieve},
+  pdfsubject={Number theory, formal verification},
+  colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue!55!black
+}
+
+% ---------------------------------------------------------------- theorems --
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% ------------------------------------------------------------- pseudocode ---
+\newcounter{algline}
+\newenvironment{pseudocode}
+  {\begin{list}{\footnotesize\sffamily\arabic{algline}:}%
+     {\usecounter{algline}%
+      \setlength{\leftmargin}{2.4em}\setlength{\labelwidth}{1.6em}%
+      \setlength{\labelsep}{0.8em}\setlength{\itemsep}{1pt}%
+      \setlength{\parsep}{0pt}\setlength{\topsep}{4pt}}}
+  {\end{list}}
+\newcommand{\kw}[1]{\textbf{#1}}
+\newcommand{\ind}{\hspace*{1.4em}}
+\newcommand{\indd}{\hspace*{2.8em}}
+\newcommand{\comm}[1]{{\color{gray}\(\triangleright\) \textit{#1}}}
+
+% -------------------------------------------------------------- listings ----
+\lstdefinestyle{py}{
+  basicstyle=\footnotesize\ttfamily, keywordstyle=\color{blue!60!black},
+  commentstyle=\color{gray}\itshape, stringstyle=\color{green!40!black},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=8pt,
+  frame=leftline, framesep=6pt, rulecolor=\color{gray!40},
+  showstringspaces=false, breaklines=true, language=Python, xleftmargin=1.2em
+}
+\lstdefinelanguage{Rocq}{
+  morekeywords={Definition,Fixpoint,Theorem,Lemma,Corollary,Proof,Qed,forall,
+    exists,match,with,end,if,then,else,let,in,fun,Require,Import,induction,
+    intros,Example,Print,Assumptions,Local,Open,Scope},
+  morecomment=[n]{(*}{*)}, sensitive=true
+}
+\lstdefinestyle{rocq}{
+  basicstyle=\footnotesize\ttfamily, keywordstyle=\color{purple!70!black},
+  commentstyle=\color{gray}\itshape, frame=leftline, framesep=6pt,
+  rulecolor=\color{gray!40}, breaklines=true, language=Rocq, xleftmargin=1.2em
+}
+
+% ---------------------------------------------------------------- macros ----
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Np}{\mathbb{N}_{\geq 1}}
+\newcommand{\Tmap}{\mathrm{T}}
+\newcommand{\vtwo}{v_2}
+\newcommand{\Acoef}{A}
+\newcommand{\Ccoef}{C}
+\newcommand{\reaches}{\mathsf{reaches1}}
+\newcommand{\Rlev}{\mathcal{R}}
+\newcommand{\Slev}{\mathcal{S}}
+
+\begin{document}
+
+% =============================================================== title ======
+\title{\bf Formal Verification of a Collatz Residue Sieve\\[2mm]
+\large A machine-checked correctness proof of \texttt{Residual\_Analysis.py}}
+
+\author{RobinCodes\\[1mm]
+\small\href{https://github.com/RobinCodes/Collatz}{\texttt{github.com/RobinCodes/Collatz}}}
+
+\date{17 August 2026}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+We give a complete correctness proof, machine-checked in the Rocq Prover, of
+\texttt{Residual\_Analysis.py} --- a program that iteratively sieves residue
+classes modulo $2^q$ that cannot contain a minimal counterexample to the
+Collatz conjecture. Three aspects of the implementation are non-obvious and
+are the substance of the proof. First, the inner loop truncates its final
+right-shift at the step budget, producing an intermediate value that is not an
+element of the Collatz trajectory; we show it nevertheless equals
+$\Tmap^{q}(n)$ exactly, where $\Tmap$ is the accelerated Collatz map. Second,
+the program tests only the least positive representative of each residue
+class; we prove via a constructive form of Terras' theorem that this single
+test decides the whole class. Third, the program treats a fixed point
+$\Tmap^{q}(r)=r$ as a \emph{dead} class while separately recording it; we show
+this is sound, because every strictly larger member of such a class descends.
+The main theorem states that for every odd $n \geq 1$ whose class the sieve has
+discarded, either $n$ reaches $1$ given that all smaller positive integers do
+--- so $n$ is not a minimal counterexample --- or $n$ lies on a cycle, and
+every such $n$ is reported in the program's \texttt{cycles} list. The Rocq
+development is axiom-free and contains no admitted proofs.
+\end{abstract}
+
+% =============================================================== intro ======
+\section{Introduction}
+
+The Collatz conjecture asserts that iterating
+\[
+  n \;\longmapsto\;
+  \begin{cases}
+    n/2 & n \text{ even},\\
+    3n+1 & n \text{ odd},
+  \end{cases}
+\]
+from any positive integer eventually reaches $1$. It remains open; computational
+searches have confirmed it for all $n$ below roughly $2^{68}$.
+
+A standard partial attack is the \emph{residue sieve} of Terras~\cite{terras}
+and Everett~\cite{everett}. Because the first $q$ steps of the accelerated map
+depend only on $n \bmod 2^{q}$, one may partition $\Np$ into $2^{q}$ residue
+classes and ask, for each class, whether \emph{every} member drops below
+itself within $q$ steps. A class with that property can contain no minimal
+counterexample and may be discarded; a surviving class is refined modulo
+$2^{q+1}$ and retested. Terras proved that the density of surviving classes
+tends to $0$; the conjecture nevertheless remains open, because a density-zero
+set may still be nonempty.
+
+The program \texttt{Residual\_Analysis.py} in the repository
+\href{https://github.com/RobinCodes/Collatz}{\texttt{github.com/RobinCodes/Collatz}}
+implements this sieve. Its arithmetic core is compact and, in three places,
+does something that looks wrong at first reading. This paper proves that it is
+right, and states precisely what it does and does not establish.
+
+\paragraph{Contributions.}
+\begin{enumerate}\itemsep2pt
+\item A precise specification of the algorithm (Section~\ref{sec:prog}) and of
+      the accelerated map's affine structure (Section~\ref{sec:affine}).
+\item A constructive \emph{shift lemma} (Theorem~\ref{thm:shift}) replacing the
+      usual congruence formulation of Terras' theorem, which is what makes the
+      Rocq development tractable.
+\item Proofs that the truncated shift loop computes $\Tmap^{q}$
+      (Proposition~\ref{prop:eval}), that the least-representative test decides
+      the class (Theorem~\ref{thm:descent}), and that the sieve discards no
+      potential minimal counterexample (Theorem~\ref{thm:main}).
+\item A full Rocq formalization (Section~\ref{sec:rocq}), axiom-free, with the
+      structural invariants that justify the program's reported density figure.
+\item An explicit account of the algorithm's limits (Section~\ref{sec:limits}).
+\end{enumerate}
+
+% ============================================================ definitions ===
+\section{The accelerated map}
+\label{sec:defs}
+
+\begin{definition}[Accelerated Collatz map]
+$\Tmap : \N \to \N$ is
+\[
+  \Tmap(n) \;=\;
+  \begin{cases}
+    n/2 & n \text{ even},\\[1mm]
+    (3n+1)/2 & n \text{ odd}.
+  \end{cases}
+\]
+We write $\Tmap^{q}$ for the $q$-fold iterate and set
+$\reaches(n) \iff \exists k.\, \Tmap^{k}(n) = 1$.
+\end{definition}
+
+Since $3n+1$ is even for odd $n$, both branches are exact integer divisions.
+The following triviality is the reason the program can count \emph{halvings}
+rather than \emph{steps}.
+
+\begin{lemma}[Step accounting]\label{lem:accounting}
+Every application of $\Tmap$ divides exactly once by $2$. Consequently, for
+any $n$ and $q$, the value obtained from $n$ by repeatedly applying
+$m \mapsto 3m+1$ at odd values and dividing out powers of two, stopping the
+instant the \emph{total} number of divisions by $2$ reaches $q$, is
+$\Tmap^{q}(n)$.
+\end{lemma}
+
+\begin{definition}[$2$-adic valuation]
+For $y \neq 0$, $\vtwo(y)$ is the largest $e$ with $2^{e} \mid y$.
+\end{definition}
+
+\begin{lemma}[Chained halving]\label{lem:chain}
+Let $m$ be odd and let $d \geq 1$ satisfy $2^{d} \mid 3m+1$. Then
+\[
+  \Tmap^{d}(m) \;=\; \frac{3m+1}{2^{d}} .
+\]
+\end{lemma}
+
+\begin{proof}
+Induction on $d$. For $d=1$: $m$ is odd, so $\Tmap(m) = (3m+1)/2$. Suppose the
+claim for $d$ and let $2^{d+1} \mid 3m+1$; then also $2^{d} \mid 3m+1$, so
+$x := \Tmap^{d}(m) = (3m+1)/2^{d}$ by the induction hypothesis. Writing
+$3m+1 = 2^{d+1}t$ gives $x = 2t$, which is even, hence
+$\Tmap^{d+1}(m) = \Tmap(x) = x/2 = (3m+1)/2^{d+1}$.
+\end{proof}
+
+Note that Lemma~\ref{lem:chain} does \emph{not} require $d = \vtwo(3m+1)$. This
+is exactly the freedom the implementation exploits.
+
+% =============================================================== program ====
+\section{The program}
+\label{sec:prog}
+
+\subsection{Source}
+
+The arithmetic core of \texttt{Residual\_Analysis.py} is:
+
+\begin{lstlisting}[style=py]
+def collatz_step(n: int, score: int) -> tuple[int, int]:
+	y = 3 * n + 1
+	v2 = (y & -y).bit_length() - 1
+
+	d = min(v2, q - score)
+	return y >> d, d
+
+def collatz_sim(n: int) -> bool:
+	og_n = n
+	score = 0
+	while score < q:
+		data = collatz_step(n, score)
+		n = data[0]
+		score += data[1]
+
+	if og_n < n:
+		return True   # Survives
+	elif og_n > n:
+		return False  # Dies
+	else:
+		cycles.append(og_n)
+		return False
+\end{lstlisting}
+
+\subsection{Pseudocode}
+
+We abstract the two loops. Algorithm~\ref{alg:eval} is
+\texttt{collatz\_sim}'s inner loop; Algorithm~\ref{alg:sieve} is the outer
+sieve, including the reporting behaviour of the current version of the
+program.
+
+\begin{figure}[htb]
+\hrule\vspace{4pt}
+\noindent\textbf{Algorithm 1}\; $\textsc{Eval}(n, q)$ ---
+evaluate $\Tmap^{q}(n)$ for odd $n$ by truncated shifting.
+\vspace{2pt}\hrule
+\begin{pseudocode}
+\item $\mathit{score} \gets 0$; \quad $m \gets n$
+\item \kw{while} $\mathit{score} < q$ \kw{do}
+\item \ind $y \gets 3m + 1$ \hfill \comm{$y$ is even, since $m$ is odd}
+\item \ind $d \gets \min\!\left(\vtwo(y),\; q - \mathit{score}\right)$
+        \hfill \comm{$1 \leq d \leq q - \mathit{score}$}
+\item \ind $m \gets y \,/\, 2^{d}$ \hfill \comm{\texttt{y >> d}}
+\item \ind $\mathit{score} \gets \mathit{score} + d$
+\item \kw{return} $m$
+\end{pseudocode}
+\hrule
+\caption{}
+\label{alg:eval}
+\end{figure}
+
+\begin{figure}[htb]
+\hrule\vspace{4pt}
+\noindent\textbf{Algorithm 2}\; $\textsc{Sieve}$ --- iterative residue
+elimination.
+\vspace{2pt}\hrule
+\begin{pseudocode}
+\item $q \gets 1$; \quad $\Rlev \gets [\,1\,]$; \quad $\mathcal{C} \gets [\;]$
+\item \kw{loop}
+\item \ind $\Slev \gets [\;]$
+\item \ind \kw{for} $r \in \Rlev$ \kw{do}
+\item \indd $m \gets \textsc{Eval}(r, q)$
+\item \indd \kw{if} $m > r$ \kw{then} append $r$ to $\Slev$
+        \hfill \comm{class survives}
+\item \indd \kw{else if} $m = r$ \kw{then} append $r$ to $\mathcal{C}$
+        \hfill \comm{cycle element; class still dies}
+\item \ind \kw{report} $\;100 - 100\,|\Slev| / 2^{q}$, \; $q$, \;
+        $\Slev$ if $q \leq 15$, \; $\mathcal{C}$
+\item \ind $\Rlev \gets \bigl[\, r,\; r + 2^{q} \;:\; r \in \Slev \,\bigr]$
+\item \ind $q \gets q + 1$
+\end{pseudocode}
+\hrule
+\caption{}
+\label{alg:sieve}
+\end{figure}
+
+Three features deserve comment, and each is discharged below.
+
+\begin{enumerate}\itemsep3pt
+\item[(P1)] Line 3 of Algorithm~\ref{alg:eval} applies $3m+1$
+      unconditionally, with no parity test. This is safe only if $m$ is odd on
+      every entry to the loop body, which is not immediate: line~5 can leave
+      $m$ \emph{even} when the budget truncates the shift.
+\item[(P2)] Line 4 caps $d$ at the remaining budget. When
+      $d < \vtwo(y)$ the returned $m$ is not a Collatz trajectory element at
+      all. The comparison on line~6 of Algorithm~\ref{alg:sieve} is
+      nevertheless meaningful.
+\item[(P3)] Only the least representative $r$ of each class is ever tested,
+      yet the conclusion drawn concerns the entire infinite class
+      $\{\, r + j 2^{q} : j \geq 0 \,\}$.
+\end{enumerate}
+
+\begin{proposition}[Loop invariant and (P1)]\label{prop:inv}
+Let $n$ be odd and $q \geq 0$. Throughout Algorithm~\ref{alg:eval},
+\[
+  m = \Tmap^{\mathit{score}}(n)
+  \qquad\text{and}\qquad
+  \bigl(\, m \text{ is odd} \;\lor\; \mathit{score} = q \,\bigr).
+\]
+Moreover $d \geq 1$ at every iteration, so the loop terminates after at most
+$q$ iterations.
+\end{proposition}
+
+\begin{proof}
+Initially $m = n = \Tmap^{0}(n)$ is odd. Assume the invariant with
+$\mathit{score} < q$; then $m$ is odd, so $y = 3m+1$ is even and
+$\vtwo(y) \geq 1$, whence $d = \min(\vtwo(y), q - \mathit{score}) \geq 1$ and
+$d \leq \vtwo(y)$, so $2^{d} \mid y$. By Lemma~\ref{lem:chain},
+$y/2^{d} = \Tmap^{d}(m) = \Tmap^{\mathit{score}+d}(n)$, establishing the first
+conjunct. For the second: if $d = \vtwo(y)$ then $y/2^{d}$ is odd by
+maximality of the valuation; otherwise $d = q - \mathit{score}$, and the new
+score equals $q$. Since $d \geq 1$, the score strictly increases.
+\end{proof}
+
+\begin{proposition}[(P2)]\label{prop:eval}
+For odd $n$ and every $q \geq 0$, $\textsc{Eval}(n,q) = \Tmap^{q}(n)$.
+\end{proposition}
+
+\begin{proof}
+Immediate from Proposition~\ref{prop:inv}: the loop exits with
+$\mathit{score} = q$ --- the score increases by $d \leq q - \mathit{score}$, so
+it never overshoots --- and the invariant then reads $m = \Tmap^{q}(n)$.
+\end{proof}
+
+Proposition~\ref{prop:eval} is the resolution of the truncation puzzle. The
+final value may be even and may not occur anywhere in the Collatz trajectory
+of $n$; it is nonetheless \emph{exactly} $\Tmap^{q}(n)$, because the
+truncated division is the tail of the $q$-th $\Tmap$-step, not a corruption of
+it.
+
+% ================================================================ affine ====
+\section{Affine structure}
+\label{sec:affine}
+
+\begin{definition}[Affine coefficients]\label{def:ac}
+Define $\Acoef_{q}(n), \Ccoef_{q}(n) \in \N$ by recursion on $q$:
+\[
+  (\Acoef_{0}, \Ccoef_{0}) = (1, 0), \qquad
+  (\Acoef_{q+1}, \Ccoef_{q+1}) =
+  \begin{cases}
+    (\Acoef_{q},\; \Ccoef_{q})
+      & \Tmap^{q}(n) \text{ even},\\[1mm]
+    (3\Acoef_{q},\; 3\Ccoef_{q} + 2^{q})
+      & \Tmap^{q}(n) \text{ odd}.
+  \end{cases}
+\]
+\end{definition}
+
+\begin{lemma}[Affine identity]\label{lem:affine}
+For all $n, q$:
+\[
+  2^{q}\,\Tmap^{q}(n) \;=\; \Acoef_{q}(n)\, n \;+\; \Ccoef_{q}(n),
+  \qquad \Acoef_{q}(n) = 3^{a_{q}(n)} \text{ is odd},
+  \qquad \Ccoef_{q}(n) \geq 0,
+\]
+where $a_{q}(n)$ is the number of odd steps among the first $q$.
+\end{lemma}
+
+\begin{proof}
+Induction on $q$. The base case is $n = n$. Write $m = \Tmap^{q}(n)$ and assume
+$2^{q}m = \Acoef_{q}n + \Ccoef_{q}$.
+If $m$ is even, $\Tmap^{q+1}(n) = m/2$ and
+$2^{q+1}(m/2) = 2^{q}m = \Acoef_{q}n + \Ccoef_{q}$, matching the unchanged
+coefficients.
+If $m$ is odd, $\Tmap^{q+1}(n) = (3m+1)/2$ and
+$2^{q+1}\cdot\frac{3m+1}{2} = 2^{q}(3m+1) = 3(\Acoef_{q}n + \Ccoef_{q}) + 2^{q}
+= (3\Acoef_{q})n + (3\Ccoef_{q} + 2^{q})$.
+Oddness of $\Acoef_{q}$ is immediate: $1$ is odd and $3\Acoef_{q}$ is odd
+whenever $\Acoef_{q}$ is.
+\end{proof}
+
+The next theorem is Terras' theorem in the form we need. The usual statement
+is a congruence --- if $n \equiv n' \pmod{2^{q}}$ then the first $q$ parities
+agree --- but the constructive version below is both stronger and easier to
+formalize, since it computes the displacement rather than merely asserting
+equality of parity vectors.
+
+\begin{theorem}[Shift lemma]\label{thm:shift}
+For all $q \in \N$ and all $n, j \in \N$,
+\[
+  \Tmap^{q}\!\left(n + j\,2^{q}\right) \;=\; \Tmap^{q}(n) + \Acoef_{q}(n)\, j,
+  \qquad\text{and}\qquad
+  \bigl(\Acoef_{q},\Ccoef_{q}\bigr)\!\left(n + j\,2^{q}\right)
+    = \bigl(\Acoef_{q},\Ccoef_{q}\bigr)(n).
+\]
+\end{theorem}
+
+\begin{proof}
+Simultaneous induction on $q$. For $q=0$ both claims are trivial
+($\Acoef_{0} = 1$).
+
+For the step, put $P = 2^{q}$ and note $n + j\,2^{q+1} = n + (2j)P$. Write
+$A = \Acoef_{q}(n)$ and $m = \Tmap^{q}(n)$. The induction hypothesis applied
+with displacement $2j$ gives
+\[
+  \Tmap^{q}\!\left(n + j\,2^{q+1}\right) = m + 2Aj,
+  \qquad
+  \bigl(\Acoef_{q},\Ccoef_{q}\bigr)\!\left(n + j\,2^{q+1}\right)
+    = \bigl(\Acoef_{q},\Ccoef_{q}\bigr)(n).
+\]
+Since $2Aj$ is even, $m + 2Aj$ has the same parity as $m$; hence the
+coefficient recursion of Definition~\ref{def:ac} takes the same branch at
+step $q+1$ for both arguments, which proves the second claim. For the first:
+\begin{itemize}\itemsep2pt
+\item $m$ even: $\Tmap(m + 2Aj) = \dfrac{m + (Aj)\cdot 2}{2}
+      = \dfrac{m}{2} + Aj = \Tmap^{q+1}(n) + \Acoef_{q+1}(n)\,j$,
+      using $\Acoef_{q+1}(n) = A$.
+\item $m$ odd: $m + 2Aj$ is odd and
+      $\Tmap(m + 2Aj) = \dfrac{3m + 1 + (3Aj)\cdot 2}{2}
+      = \dfrac{3m+1}{2} + 3Aj = \Tmap^{q+1}(n) + \Acoef_{q+1}(n)\,j$,
+      using $\Acoef_{q+1}(n) = 3A$.
+\end{itemize}
+In both cases the identity $\left(x + y\cdot 2\right)/2 = x/2 + y$ for exact
+integer division is all that is required.
+\end{proof}
+
+\begin{corollary}[Class uniformity]\label{cor:uniform}
+$\Tmap^{q}$ restricted to a residue class modulo $2^{q}$ is the affine map
+$r + j2^{q} \mapsto \Tmap^{q}(r) + \Acoef_{q}(r)\,j$. In particular
+$\Tmap^{q}(n) - n$ is monotone in $j$: strictly decreasing if
+$\Acoef_{q}(r) < 2^{q}$ and strictly increasing if $\Acoef_{q}(r) > 2^{q}$.
+\end{corollary}
+
+% =============================================================== descent ====
+\section{The least-representative test}
+\label{sec:descent}
+
+We now discharge (P3): why testing $r$ alone suffices.
+
+\begin{lemma}\label{lem:Asmall}
+Let $q \geq 1$ and $r \geq 1$ with $\Tmap^{q}(r) \leq r$. Then
+$\Acoef_{q}(r) < 2^{q}$.
+\end{lemma}
+
+\begin{proof}
+By Lemma~\ref{lem:affine},
+$\Acoef_{q}(r)\,r + \Ccoef_{q}(r) = 2^{q}\Tmap^{q}(r) \leq 2^{q}r$.
+Since $\Ccoef_{q}(r) \geq 0$ we get $\Acoef_{q}(r)\,r \leq 2^{q}r$, and since
+$r \geq 1$, $\Acoef_{q}(r) \leq 2^{q}$. Equality is impossible:
+$\Acoef_{q}(r)$ is odd by Lemma~\ref{lem:affine}, while $2^{q}$ is even for
+$q \geq 1$. Hence $\Acoef_{q}(r) < 2^{q}$.
+\end{proof}
+
+\begin{theorem}[Descent]\label{thm:descent}
+Let $q \geq 1$ and $r \geq 1$ with $\Tmap^{q}(r) \leq r$. Then for every
+$j \geq 0$ such that $\Tmap^{q}(r) < r$ or $j \geq 1$,
+\[
+  \Tmap^{q}\!\left(r + j\,2^{q}\right) \;<\; r + j\,2^{q}.
+\]
+\end{theorem}
+
+\begin{proof}
+Write $A = \Acoef_{q}(r)$; by Lemma~\ref{lem:Asmall}, $A < 2^{q}$. By
+Theorem~\ref{thm:shift}, $\Tmap^{q}(r + j2^{q}) = \Tmap^{q}(r) + Aj$.
+If $\Tmap^{q}(r) < r$ then $\Tmap^{q}(r) + Aj < r + 2^{q}j$ since
+$Aj \leq 2^{q}j$. If instead $j \geq 1$ then $Aj < 2^{q}j$ strictly, and
+$\Tmap^{q}(r) \leq r$ suffices.
+\end{proof}
+
+Theorem~\ref{thm:descent} covers both branches the program takes:
+
+\begin{itemize}\itemsep3pt
+\item \textbf{Strict descent} ($\Tmap^{q}(r) < r$): the whole class descends,
+      including $r$ itself. The program discards it.
+\item \textbf{Fixed point} ($\Tmap^{q}(r) = r$): every member \emph{strictly
+      above} $r$ descends, but $r$ itself does not --- it lies on a cycle. The
+      program discards the class and separately records $r$ in
+      \texttt{cycles}. This is sound, and it is why the equality branch is not
+      a bug.
+\end{itemize}
+
+\begin{remark}
+The fixed-point case has a pleasant reformulation. If $\Tmap^{q}(r) = r$ then
+Lemma~\ref{lem:affine} gives $\Ccoef_{q}(r) = (2^{q} - \Acoef_{q}(r))\,r$, so
+for $n = r + j2^{q}$,
+\[
+  \Tmap^{q}(n) - n \;=\; \frac{(2^{q} - \Acoef_{q}(r))\,(r - n)}{2^{q}} \;<\; 0
+  \qquad (j \geq 1),
+\]
+an explicit descent rate.
+\end{remark}
+
+\begin{theorem}[No minimal counterexample]\label{thm:nomin}
+Let $q \geq 1$, $r \geq 1$, $\Tmap^{q}(r) \leq r$, and let
+$n = r + j2^{q}$ with $\Tmap^{q}(r) < r$ or $j \geq 1$. If every $m$ with
+$1 \leq m < n$ satisfies $\reaches(m)$, then $\reaches(n)$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:descent}, $\Tmap^{q}(n) < n$. Since $n \geq 1$ and
+$\Tmap$ maps nonzero values to nonzero values, $\Tmap^{q}(n) \geq 1$. By
+hypothesis $\reaches(\Tmap^{q}(n))$, say $\Tmap^{k}(\Tmap^{q}(n)) = 1$; then
+$\Tmap^{k+q}(n) = 1$, so $\reaches(n)$.
+\end{proof}
+
+% ================================================================= sieve ====
+\section{The sieve}
+\label{sec:sieve}
+
+\begin{definition}\label{def:sieve}
+Let $\mathrm{survives}(q, r) \iff \Tmap^{q}(r) > r$ and, for a list $L$,
+\[
+  \mathrm{children}_{q}(L) \;=\;
+  \bigl[\; r,\; r + 2^{q} \;:\; r \in L \;\bigr].
+\]
+Define $\Rlev_{1} = [\,1\,]$ and
+$\Rlev_{q+1} = \mathrm{children}_{q}\bigl(\mathrm{filter}\,
+\mathrm{survives}(q,\cdot)\;\Rlev_{q}\bigr)$.
+\end{definition}
+
+$\Rlev_{q}$ is exactly the program's \texttt{relevant\_residues} at level $q$,
+and $\Slev_{q} = \mathrm{filter}\,\mathrm{survives}(q,\cdot)\,\Rlev_{q}$ is
+\texttt{surviving\_residues}.
+
+\begin{proposition}[Structural invariants]\label{prop:struct}
+For every $q \geq 1$ and every $r \in \Rlev_{q}$:
+\begin{enumerate}\itemsep1pt
+\item[(i)] $r$ is odd;
+\item[(ii)] $1 \leq r < 2^{q}$, so $r$ is the least positive member of its
+      class modulo $2^{q}$;
+\item[(iii)] $\Rlev_{q}$ has no repeated entries.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Induction on $q$. For $q=1$, $\Rlev_{1} = [1]$ and $1 < 2$.
+(i) $2^{q}$ is even for $q \geq 1$, so $r$ and $r + 2^{q}$ have the same
+parity. (ii) If $r < 2^{q}$ then both $r$ and $r + 2^{q}$ lie below
+$2^{q+1}$. (iii) Suppose $\Rlev_{q}$ is repetition-free with all entries below
+$2^{q}$. Within one parent $r$ we have $r \neq r + 2^{q}$; across distinct
+parents $r \neq r'$, we have $r \neq r'$, $r + 2^{q} \neq r' + 2^{q}$, and
+$r \neq r' + 2^{q}$ because $r < 2^{q} \leq r' + 2^{q}$.
+\end{proof}
+
+Part (i) justifies (P1) at the level of the outer loop: every value fed to
+\textsc{Eval} is odd, so Proposition~\ref{prop:inv} applies. Part (ii)
+justifies (P3): the tested value really is the least member of its class, and
+by Corollary~\ref{cor:uniform} that is the hardest case. Part (iii) is what
+makes the program's \texttt{len(set(surviving\_residues))} equal to
+\texttt{len(surviving\_residues)} --- the \texttt{set()} is redundant but
+harmless --- and it is what makes the reported density well defined.
+
+\begin{corollary}[The reported density]\label{cor:density}
+The quantity $100 - 100\,|\Slev_{q}|/2^{q}$ printed at level $q$ is exactly the
+percentage of residue classes modulo $2^{q}$ that the sieve has proven to
+descend. All even classes are eliminated at $q=1$, since
+$\Tmap(2m) = m < 2m$, which is why the denominator is $2^{q}$ rather than the
+count $2^{q-1}$ of odd classes.
+\end{corollary}
+
+\begin{remark}
+Corollary~\ref{cor:density} settles which of two natural quantities the
+program reports. Relative to the odd residues alone --- the only ones the
+sieve ever refines --- the surviving density is twice
+$|\Slev_{q}|/2^{q}$. Both are meaningful; the printed figure is the density
+among \emph{all} integers.
+\end{remark}
+
+\begin{theorem}[Coverage]\label{thm:cov}
+Let $n \geq 1$ be odd and let $q \geq 1$. Then at least one of the following
+holds:
+\begin{enumerate}\itemsep1pt
+\item[(a)] there are $r \in \Rlev_{q}$ and $j \geq 0$ with $n = r + j2^{q}$; or
+\item[(b)] there are $q' \leq q$, $r \in \Rlev_{q'}$ and $j \geq 0$ with
+      $n = r + j 2^{q'}$ and $\Tmap^{q'}(r) \leq r$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Induction on $q$. For $q=1$: $n$ is odd, so $n = 1 + j\cdot 2$ for some $j$,
+and $1 \in \Rlev_{1}$, giving (a).
+
+Assume the claim at $q$. If (b) holds, it holds verbatim at $q+1$. Otherwise
+take $r \in \Rlev_{q}$ and $j$ with $n = r + j2^{q}$.
+If $\mathrm{survives}(q,r)$ fails, then $\Tmap^{q}(r) \leq r$ and we are in
+case (b) with $q' = q$. If it holds, then $r \in \Slev_{q}$, so both $r$ and
+$r + 2^{q}$ belong to $\Rlev_{q+1}$. Split on the parity of $j$:
+\[
+  j = 2j' \;\Rightarrow\; n = r + j'2^{q+1},
+  \qquad
+  j = 2j' + 1 \;\Rightarrow\; n = (r + 2^{q}) + j'2^{q+1},
+\]
+which is case (a) at level $q+1$.
+\end{proof}
+
+\begin{theorem}[Main theorem: soundness of the sieve]\label{thm:main}
+Let $n \geq 1$ be odd, let $q \geq 1$, and suppose every $m$ with
+$1 \leq m < n$ satisfies $\reaches(m)$. Then at least one of the following
+holds:
+\begin{enumerate}\itemsep1pt
+\item[(a)] $n$'s residue class is still present in $\Rlev_{q}$ --- the sieve
+      makes no claim about $n$; or
+\item[(b)] $\reaches(n)$ --- so $n$ is not a minimal counterexample; or
+\item[(c)] $\Tmap^{q'}(n) = n$ for some $q' \leq q$, i.e.\ $n$ lies on a
+      cycle of the accelerated map.
+\end{enumerate}
+Moreover, in case (c) the value $n$ appears in the program's \texttt{cycles}
+list.
+\end{theorem}
+
+\begin{proof}
+Apply Theorem~\ref{thm:cov}. Case (a) is immediate. In case (b) of that
+theorem, we have $n = r + j2^{q'}$ with $r \geq 1$ and
+$\Tmap^{q'}(r) \leq r$.
+
+If $j \geq 1$, Theorem~\ref{thm:nomin} yields $\reaches(n)$.
+If $j = 0$ then $n = r$. Either $\Tmap^{q'}(n) < n$, in which case
+$\Tmap^{q'}(n)$ is a positive integer below $n$, so $\reaches(\Tmap^{q'}(n))$
+by hypothesis and hence $\reaches(n)$; or $\Tmap^{q'}(n) = n$, which is case
+(c).
+
+For the final claim, observe that the coverage proof produces case (b) only
+with $r \in \Rlev_{q'}$, and the program tests every element of $\Rlev_{q'}$
+at level $q'$ and appends precisely those with $\Tmap^{q'}(r) = r$ to
+\texttt{cycles}. Since $q' \leq q$, the value has already been recorded by the
+time level $q$ is reported.
+\end{proof}
+
+\begin{corollary}
+If the sieve at level $q$ discards a residue class, that class contains no
+minimal counterexample to the Collatz conjecture other than, possibly, a cycle
+element that the program reports.
+\end{corollary}
+
+% ================================================================== rocq ====
+\section{Rocq formalization}
+\label{sec:rocq}
+
+The development \texttt{proofs/CollatzSieve.v} formalizes everything above.
+Numbers are binary naturals (\texttt{N}); step counts are \texttt{nat}, so
+that iteration is structurally recursive.
+
+\begin{lstlisting}[style=rocq]
+Definition T (n : N) : N := if N.even n then n / 2 else (3 * n + 1) / 2.
+
+Fixpoint Tp (k : nat) (n : N) : N :=
+  match k with O => n | S k' => T (Tp k' n) end.
+
+Definition reaches1 (n : N) : Prop := exists k, Tp k n = 1.
+\end{lstlisting}
+
+The inner loop is modelled with an explicit structural fuel argument, since
+$\mathit{rem} - d$ is not syntactically decreasing:
+
+\begin{lstlisting}[style=rocq]
+Fixpoint sim_aux (fuel rem : nat) (n : N) : N :=
+  match fuel with
+  | O   => n
+  | S f => match rem with
+           | O   => n
+           | S _ => let y := 3 * n + 1 in
+                    let d := Nat.min (v2 y) rem in
+                    sim_aux f (rem - d) (y / pow2 d)
+           end
+  end.
+
+Definition sim (q : nat) (n : N) : N := sim_aux q q n.
+\end{lstlisting}
+
+Since $d \geq 1$ at every iteration, fuel $= q$ always suffices; this is the
+content of the hypothesis $\mathit{rem} \leq \mathit{fuel}$ in
+\texttt{sim\_aux\_correct}.
+
+The $2$-adic valuation is defined by structural recursion on the binary
+representation, which makes it total and evaluation-friendly:
+
+\begin{lstlisting}[style=rocq]
+Fixpoint v2p (p : positive) : nat :=
+  match p with xO q => S (v2p q) | _ => O end.
+
+Definition v2 (y : N) : nat := match y with N0 => O | Npos p => v2p p end.
+\end{lstlisting}
+
+Table~\ref{tab:map} maps the results of this paper to their Rocq names.
+
+\begin{table}[htb]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Result} & \textbf{Statement} & \textbf{Rocq name} \\
+\midrule
+Lemma~\ref{lem:chain}      & chained halving              & \texttt{step\_chain} \\
+Prop.~\ref{prop:inv}/\ref{prop:eval} & \textsc{Eval} computes $\Tmap^{q}$ & \texttt{sim\_aux\_correct}, \texttt{sim\_correct} \\
+--                         & \texttt{collatz\_sim} spec   & \texttt{collatz\_sim\_correct} \\
+Lemma~\ref{lem:affine}     & $2^{q}\Tmap^{q}(n) = A n + C$ & \texttt{affine}, \texttt{A\_odd} \\
+Thm.~\ref{thm:shift}       & shift lemma (Terras)         & \texttt{shift}, \texttt{shift\_val} \\
+Lemma~\ref{lem:Asmall}     & $A_{q}(r) < 2^{q}$           & \texttt{A\_lt\_pow2} \\
+Thm.~\ref{thm:descent}     & class-wide descent           & \texttt{descent} \\
+Thm.~\ref{thm:nomin}       & no minimal counterexample    & \texttt{no\_minimal\_counterexample} \\
+Prop.~\ref{prop:struct}    & odd / bounded / distinct     & \texttt{Rl\_odd}, \texttt{Rl\_range}, \texttt{Rl\_nodup} \\
+Thm.~\ref{thm:cov}         & coverage                     & \texttt{coverage} \\
+Thm.~\ref{thm:main}        & sieve soundness              & \texttt{sieve\_sound} \\
+Thm.~\ref{thm:main}(c)     & cycles are reported          & \texttt{cycles\_complete} \\
+\bottomrule
+\end{tabular}
+\caption{Correspondence between the paper and \texttt{proofs/CollatzSieve.v}.}
+\label{tab:map}
+\end{table}
+
+Two conveniences make the development robust. First, \texttt{AC} is unfolded
+exactly once, into recursion equations \texttt{Acoef\_S} and
+\texttt{Ccoef\_S}; every later proof rewrites with those rather than reducing
+\texttt{AC}, so no proof depends on how far \texttt{simpl} chooses to go.
+Second, \texttt{sim\_aux} is given the equations \texttt{sim\_aux\_rem0} and
+\texttt{sim\_aux\_S} (both closed by \texttt{reflexivity}), because
+\texttt{simpl} would otherwise inline the \texttt{let}-bindings and expand
+$3n+1$ into its binary representation.
+
+\paragraph{Verification status.}
+The file ends with \texttt{Print Assumptions} on every headline result. All
+eight report \emph{Closed under the global context}: the development uses no
+axioms, no classical logic, no functional extensionality, and contains no
+\texttt{Admitted} proofs or \texttt{admit} tactics. It also contains
+executable sanity checks closed by \texttt{reflexivity}, for instance
+\texttt{Rl 1 = [1; 3]}, \texttt{survives 2 1 = false}, \texttt{Tp 2 1 = 1} and
+\texttt{sim 4 3 = 2}. Checked with the Rocq Prover 9.1.1 (OCaml 5.5.0); a
+clean build of all 742 lines takes under three seconds.
+
+\paragraph{Reproducing.}
+\begin{lstlisting}[style=rocq,numbers=none]
+$ rocq compile proofs/CollatzSieve.v
+Closed under the global context     (x8)
+\end{lstlisting}
+
+% ================================================================= data =====
+\section{Computed data}
+\label{sec:data}
+
+Table~\ref{tab:data} lists the program's output for $q \leq 24$. The survivor
+counts reproduce the classical Terras sieve counts, and the residue sets agree
+elementwise with an independent step-by-step implementation of $\Tmap$ that
+shares no code with the bit-twiddling version.
+
+\begin{table}[htb]
+\centering
+\small
+\begin{tabular}{@{}rrr@{\hskip 3em}rrr@{}}
+\toprule
+$q$ & $|\Slev_{q}|$ & eliminated (\%) & $q$ & $|\Slev_{q}|$ & eliminated (\%) \\
+\midrule
+1 & 1 & 50.0000 & 13 & 367 & 95.5200 \\
+2 & 1 & 75.0000 & 14 & 734 & 95.5200 \\
+3 & 2 & 75.0000 & 15 & 1295 & 96.0480 \\
+4 & 3 & 81.2500 & 16 & 2114 & 96.7743 \\
+5 & 4 & 87.5000 & 17 & 4228 & 96.7743 \\
+6 & 8 & 87.5000 & 18 & 7495 & 97.1409 \\
+7 & 13 & 89.8438 & 19 & 14990 & 97.1409 \\
+8 & 19 & 92.5781 & 20 & 27328 & 97.3938 \\
+9 & 38 & 92.5781 & 21 & 46611 & 97.7774 \\
+10 & 64 & 93.7500 & 22 & 93222 & 97.7774 \\
+11 & 128 & 93.7500 & 23 & 168807 & 97.9877 \\
+12 & 226 & 94.4824 & 24 & 286581 & 98.2918 \\
+\bottomrule
+\end{tabular}
+\caption{Surviving residue classes and eliminated density by level.}
+\label{tab:data}
+\end{table}
+
+The only entry ever added to \texttt{cycles} is $1$, contributed at $q=2$
+because $\Tmap(1) = 2$ and $\Tmap(2) = 1$. Class $1 \bmod 4$ is therefore
+retired at level $2$; by the remark following Theorem~\ref{thm:descent} every
+$n \equiv 1 \pmod 4$ with $n > 1$ satisfies $\Tmap^{2}(n) = (3n+1)/4 < n$.
+
+% ================================================================ limits ====
+\section{What is \emph{not} proved}
+\label{sec:limits}
+
+Theorem~\ref{thm:main} is a soundness result about an elimination procedure.
+It is worth being explicit about its reach.
+
+\begin{enumerate}\itemsep4pt
+\item \textbf{The sieve cannot prove the conjecture.} Terras~\cite{terras}
+      showed the surviving density tends to $0$; Table~\ref{tab:data} exhibits
+      that decay. But a set of density zero can be infinite and nonempty, and
+      the sieve provides no bound on the surviving classes' members. No
+      finite run --- and no limit of runs --- settles Collatz.
+
+\item \textbf{Cycle detection is incidental, not a search.} The equality
+      branch fires only when a cycle's minimal element $m$ satisfies
+      $m < 2^{L}$ for its $\Tmap$-period $L$ \emph{and} $m$ is still unsieved
+      at level $L$. The program is not a cycle-finding algorithm, and
+      Theorem~\ref{thm:main}(c) should not be read as one. What the theorem
+      does guarantee is the converse direction that matters for soundness: no
+      class is discarded on the strength of a fixed point without that fixed
+      point being reported.
+
+\item \textbf{Resource growth.} $|\Rlev_{q}| = 2|\Slev_{q-1}|$ grows roughly
+      geometrically (empirically by a factor near $1.7$ per level), so memory
+      is exponential in $q$. Since the program appends the full survivor list
+      to its log at every level, log size is quadratic in the number of levels
+      unless suppressed --- which is what the $q \leq 15$ cutoff on line 8 of
+      Algorithm~\ref{alg:sieve} is for. No information is lost by that cutoff:
+      $|\Slev_{q}|$ is recoverable from the reported percentage $p$ as
+      $|\Slev_{q}| = (100 - p)\,2^{q}/100$.
+
+\item \textbf{Machine integers.} The Rocq development reasons about
+      mathematical integers. Python's \texttt{int} is arbitrary-precision, so
+      this is faithful; a port to fixed-width arithmetic would need an
+      overflow argument that is absent here.
+\end{enumerate}
+
+% ============================================================ conclusion ====
+\section{Conclusion}
+
+The three suspicious-looking features of \texttt{Residual\_Analysis.py} are all
+correct, and each for a specific reason. The unconditional $3m+1$ is safe
+because oddness is a loop invariant of both loops
+(Propositions~\ref{prop:inv} and~\ref{prop:struct}(i)). The truncated shift
+computes $\Tmap^{q}(n)$ on the nose, because a truncated division is the tail
+of the last $\Tmap$-step rather than a corruption of it
+(Proposition~\ref{prop:eval}). And testing the least representative decides
+the entire class, because $\Tmap^{q}$ is affine on each class with an odd
+multiplier (Theorem~\ref{thm:shift}, Lemma~\ref{lem:Asmall}).
+
+The one defect the analysis surfaced was not in the arithmetic but in the
+reporting: the \texttt{cycles} list was populated and never printed. Since
+Theorem~\ref{thm:main}(c) identifies that list as precisely the set of
+exceptions to the soundness statement, the program's most consequential
+possible output was the one it could not emit. That has been corrected.
+
+% ============================================================= references ===
+\begin{thebibliography}{9}
+
+\bibitem{terras}
+R.~Terras.
+\newblock A stopping time problem on the positive integers.
+\newblock \emph{Acta Arithmetica}, 30(3):241--252, 1976.
+
+\bibitem{everett}
+C.~J.~Everett.
+\newblock Iteration of the number-theoretic function $f(2n) = n$,
+  $f(2n+1) = 3n+2$.
+\newblock \emph{Advances in Mathematics}, 25(1):42--45, 1977.
+
+\bibitem{lagarias}
+J.~C.~Lagarias.
+\newblock The $3x+1$ problem and its generalizations.
+\newblock \emph{The American Mathematical Monthly}, 92(1):3--23, 1985.
+
+\bibitem{lagariasbook}
+J.~C.~Lagarias, editor.
+\newblock \emph{The Ultimate Challenge: The $3x+1$ Problem}.
+\newblock American Mathematical Society, 2010.
+
+\bibitem{tao}
+T.~Tao.
+\newblock Almost all orbits of the Collatz map attain almost bounded values.
+\newblock \emph{Forum of Mathematics, Pi}, 10:e12, 2022.
+
+\bibitem{rocq}
+The Rocq Development Team.
+\newblock \emph{The Rocq Prover}.
+\newblock \url{https://rocq-prover.org/}.
+
+\bibitem{repo}
+RobinCodes.
+\newblock Collatz --- residual analysis and orbital graphs.
+\newblock \url{https://github.com/RobinCodes/Collatz}.
+
+\end{thebibliography}
+
+\end{document}

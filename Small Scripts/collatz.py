@@ -27,7 +27,7 @@ def collatz(n):
     return highest, seq_len
 
 # Test the function
-for i in range(1, 10**4):
+for i in range(1, 10**6):
     collatz(i)
 
 end_time = time.time()

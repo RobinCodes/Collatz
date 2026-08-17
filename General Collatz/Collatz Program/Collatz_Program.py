@@ -85,6 +85,34 @@ def collatz_orbit(start, a, b, max_steps):
     return seq, [], False
 
 
+def safe_mean(values):
+    """Calculate mean using Python native operations for large numbers"""
+    if not values:
+        return 0
+    return sum(values) / len(values)
+
+
+def safe_median(values):
+    """Calculate median using Python native operations"""
+    if not values:
+        return 0
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    if n % 2 == 0:
+        return (sorted_vals[n//2 - 1] + sorted_vals[n//2]) / 2
+    else:
+        return sorted_vals[n//2]
+
+
+def safe_std(values):
+    """Calculate standard deviation using Python native operations"""
+    if not values:
+        return 0
+    mean = safe_mean(values)
+    variance = sum((x - mean) ** 2 for x in values) / len(values)
+    return variance ** 0.5
+
+
 def analyze_sequence(seq, cycle, cycled):
     """Deep statistical analysis of a sequence"""
     if not seq:
@@ -96,9 +124,9 @@ def analyze_sequence(seq, cycle, cycled):
         "min_value": min(seq),
         "start_value": seq[0],
         "end_value": seq[-1],
-        "mean": np.mean(seq),
-        "median": np.median(seq),
-        "std_dev": np.std(seq),
+        "mean": safe_mean(seq),
+        "median": safe_median(seq),
+        "std_dev": safe_std(seq),
         "growth_rate": seq[-1] / seq[0] if seq[0] != 0 else 0,
         "cycled": cycled,
         "cycle_length": len(cycle) if cycled else 0,
@@ -128,6 +156,115 @@ def analyze_sequence(seq, cycle, cycled):
 
 
 # ======================================================
+# Advanced Configuration Modal
+# ======================================================
+
+class AdvancedConfigModal(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Advanced Configuration")
+        self.configure(bg=parent.theme["bg"])
+        self.geometry("700x500")
+        self.resizable(True, True)
+        
+        self.parent = parent
+        self.theme = parent.theme
+        self.result = None
+        
+        self._build_ui()
+        
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+        
+    def _build_ui(self):
+        # Instructions
+        instructions = tk.Label(
+            self, 
+            text="Define specific map-start combinations (one per line):\nFormat: map_expression : start_values\nExample: 3x+1 : 7 15 27",
+            bg=self.theme["bg"],
+            fg=self.theme["text"],
+            font=("Arial", 10),
+            justify="left"
+        )
+        instructions.pack(padx=10, pady=10, anchor="w")
+        
+        # Text area
+        text_frame = tk.Frame(self, bg=self.theme["bg"])
+        text_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        self.text_area = scrolledtext.ScrolledText(
+            text_frame,
+            bg=self.theme["panel"],
+            fg="white",
+            font=("Consolas", 10),
+            insertbackground="white"
+        )
+        self.text_area.pack(fill="both", expand=True)
+        
+        # Example text
+        example = """3x+1 : 7 15 27 63
+5x+1 : 3 7 11
+7x+1 : 5 9 13 17"""
+        self.text_area.insert("1.0", example)
+        
+        # Buttons
+        button_frame = tk.Frame(self, bg=self.theme["bg"])
+        button_frame.pack(fill="x", padx=10, pady=10)
+        
+        tk.Button(
+            button_frame,
+            text="Apply",
+            command=self._apply,
+            bg=self.theme["accent"],
+            fg="white",
+            font=("Arial", 10, "bold"),
+            width=15
+        ).pack(side="left", padx=5)
+        
+        tk.Button(
+            button_frame,
+            text="Cancel",
+            command=self._cancel,
+            bg=self.theme["panel"],
+            fg=self.theme["text"],
+            font=("Arial", 10),
+            width=15
+        ).pack(side="left", padx=5)
+        
+    def _apply(self):
+        """Parse and validate the configuration"""
+        text = self.text_area.get("1.0", "end-1c")
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        
+        config = []
+        try:
+            for line in lines:
+                if ":" not in line:
+                    raise ValueError(f"Invalid format: {line}")
+                
+                map_part, starts_part = line.split(":", 1)
+                map_expr = map_part.strip()
+                starts = [int(x.strip()) for x in starts_part.split()]
+                
+                # Validate map
+                a, b = parse_map(map_expr)
+                
+                config.append(((a, b), starts))
+                
+            self.result = config
+            self.destroy()
+            
+        except Exception as e:
+            messagebox.showerror("Invalid Configuration", 
+                               f"Error parsing configuration:\n{str(e)}")
+    
+    def _cancel(self):
+        self.result = None
+        self.destroy()
+
+
+# ======================================================
 # Main Application
 # ======================================================
 
@@ -136,28 +273,40 @@ class CollatzVisualizer(tk.Tk):
         super().__init__()
 
         self.title("Advanced Collatz Orbital Analyzer")
-        self.state('zoomed')  # Full screen on Windows
-        try:
-            self.attributes('-zoomed', True)  # Full screen on Linux
-        except:
-            pass
-        
+        self._maximize()
+
         self.current_theme = "Deep Space"
         self.theme = THEMES[self.current_theme]
         self.configure(bg=self.theme["bg"])
 
         self.animation = None
+        self.animate_var = tk.BooleanVar(value=False)  # Fixed: proper BooleanVar
         self.show_labels = tk.BooleanVar(value=False)
         self.show_grid = tk.BooleanVar(value=True)
         self.show_peaks = tk.BooleanVar(value=False)
         self.log_scale = tk.BooleanVar(value=True)
         self.results = defaultdict(list)
         self.analyses = defaultdict(list)
+        self.advanced_config = None
 
         self._configure_styles()
         self._build_ui()
 
-    # --------------------------------------------------
+    def _maximize(self):
+        """Maximize the window, whichever of the platform tricks actually works."""
+        try:
+            self.state('zoomed')  # Windows / some Linux window managers
+            return
+        except tk.TclError:
+            pass
+        try:
+            self.attributes('-zoomed', True)  # X11
+            return
+        except tk.TclError:
+            pass
+        # Wayland and anything else: just size to the screen
+        self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
+
     # Styling
     # --------------------------------------------------
 
@@ -263,14 +412,24 @@ class CollatzVisualizer(tk.Tk):
                                  fg="white", width=8)
         self.range_end.pack(side="left", padx=2)
 
+        # Advanced Config Button
+        tk.Button(
+            input_frame,
+            text="⚙️ Advanced Config",
+            command=self.open_advanced_config,
+            bg=self.theme["highlight"],
+            fg="white",
+            font=("Arial", 9, "bold")
+        ).grid(row=3, column=1, sticky="w", padx=5, pady=3)
+
         # Max steps
         tk.Label(input_frame, text="Max steps:", fg=self.theme["text"],
-                bg=self.theme["bg"]).grid(row=3, column=0, sticky="w", 
+                bg=self.theme["bg"]).grid(row=4, column=0, sticky="w", 
                                          padx=5, pady=3)
         self.steps_entry = tk.Entry(input_frame, bg=self.theme["panel"],
                                     fg="white", width=12)
         self.steps_entry.insert(0, "500")
-        self.steps_entry.grid(row=3, column=1, sticky="w", padx=5, pady=3)
+        self.steps_entry.grid(row=4, column=1, sticky="w", padx=5, pady=3)
 
         input_frame.columnconfigure(1, weight=1)
 
@@ -280,13 +439,15 @@ class CollatzVisualizer(tk.Tk):
                                      font=("Arial", 10, "bold"))
         options_frame.pack(fill="x", padx=5, pady=5)
 
-        tk.Checkbutton(options_frame, text="Animate", variable=tk.BooleanVar(),
-                      bg=self.theme["bg"], fg=self.theme["text"],
-                      selectcolor=self.theme["bg"],
-                      command=lambda: setattr(self, 'animate_var', 
-                                            not getattr(self, 'animate_var', False))
-                      ).pack(anchor="w", padx=5)
-        self.animate_var = False
+        # Fixed: Proper checkbutton for animation
+        tk.Checkbutton(
+            options_frame, 
+            text="Animate", 
+            variable=self.animate_var,
+            bg=self.theme["bg"], 
+            fg=self.theme["text"],
+            selectcolor=self.theme["bg"]
+        ).pack(anchor="w", padx=5)
 
         tk.Checkbutton(options_frame, text="Show labels", 
                       variable=self.show_labels, command=self.redraw,
@@ -339,6 +500,17 @@ class CollatzVisualizer(tk.Tk):
     # Core Functionality
     # --------------------------------------------------
 
+    def open_advanced_config(self):
+        """Open advanced configuration modal"""
+        modal = AdvancedConfigModal(self)
+        self.wait_window(modal)
+        
+        if modal.result:
+            self.advanced_config = modal.result
+            self.status_var.set(f"Advanced config loaded: {len(modal.result)} map-start combinations")
+        else:
+            self.advanced_config = None
+
     def get_start_values(self):
         """Get start values from entry or range"""
         if self.range_start.get() and self.range_end.get():
@@ -359,34 +531,54 @@ class CollatzVisualizer(tk.Tk):
             self.status_var.set("Computing orbits...")
             self.update()
 
-            maps = [parse_map(m) for m in self.maps_entry.get().split()]
-            starts = self.get_start_values()
             max_steps = int(self.steps_entry.get())
-
             self.results.clear()
             self.analyses.clear()
             cmap = plt.get_cmap("tab20")
 
             total_computed = 0
-            for i, m in enumerate(maps):
-                color = cmap(i % 20)
-                for j, s in enumerate(starts):
-                    seq, cycle, cycled = collatz_orbit(s, *m, max_steps)
-                    self.results[m].append((s, seq, cycle, cycled, color))
-                    
-                    # Perform analysis
-                    analysis = analyze_sequence(seq, cycle, cycled)
-                    self.analyses[m].append((s, analysis))
-                    
-                    total_computed += 1
-                    if total_computed % 10 == 0:
-                        self.status_var.set(f"Computed {total_computed} orbits...")
-                        self.update()
+            
+            # Use advanced config if available
+            if self.advanced_config:
+                for i, (map_tuple, starts) in enumerate(self.advanced_config):
+                    color = cmap(i % 20)
+                    for s in starts:
+                        seq, cycle, cycled = collatz_orbit(s, *map_tuple, max_steps)
+                        self.results[map_tuple].append((s, seq, cycle, cycled, color))
+                        
+                        # Perform analysis
+                        analysis = analyze_sequence(seq, cycle, cycled)
+                        self.analyses[map_tuple].append((s, analysis))
+                        
+                        total_computed += 1
+                        if total_computed % 10 == 0:
+                            self.status_var.set(f"Computed {total_computed} orbits...")
+                            self.update()
+            else:
+                # Use standard config
+                maps = [parse_map(m) for m in self.maps_entry.get().split()]
+                starts = self.get_start_values()
+                
+                for i, m in enumerate(maps):
+                    color = cmap(i % 20)
+                    for j, s in enumerate(starts):
+                        seq, cycle, cycled = collatz_orbit(s, *m, max_steps)
+                        self.results[m].append((s, seq, cycle, cycled, color))
+                        
+                        # Perform analysis
+                        analysis = analyze_sequence(seq, cycle, cycled)
+                        self.analyses[m].append((s, analysis))
+                        
+                        total_computed += 1
+                        if total_computed % 10 == 0:
+                            self.status_var.set(f"Computed {total_computed} orbits...")
+                            self.update()
 
             self.status_var.set(f"Rendering {total_computed} orbits...")
             self.update()
 
-            if self.animate_var:
+            # Fixed: Use .get() to check BooleanVar
+            if self.animate_var.get():
                 self.animate()
             else:
                 self.draw_static()
@@ -405,8 +597,8 @@ class CollatzVisualizer(tk.Tk):
         )
         if total_points <= 0:
             return 1.0
-        scale = np.sqrt(REF_POINTS / total_points)
-        return float(np.clip(scale, 0.3, 3.0))
+        scale = (REF_POINTS / total_points) ** 0.5
+        return float(max(0.3, min(3.0, scale)))
 
     def draw_static(self):
         """Render static visualization"""
@@ -419,43 +611,50 @@ class CollatzVisualizer(tk.Tk):
             self.ax.grid(True, alpha=0.2, color=self.theme["text"])
 
         scale = self.compute_visual_scale()
-        node_size = np.clip(60 * scale, NODE_MIN, NODE_MAX)
-        glow_size = np.clip(900 * scale, GLOW_MIN, GLOW_MAX)
-        label_size = np.clip(9 * scale, LABEL_MIN, LABEL_MAX)
+        node_size = max(NODE_MIN, min(NODE_MAX, 60 * scale))
+        glow_size = max(GLOW_MIN, min(GLOW_MAX, 900 * scale))
+        label_size = max(LABEL_MIN, min(LABEL_MAX, 9 * scale))
 
         for map_key, seqs in self.results.items():
             for start, seq, cycle, cycled, color in seqs:
-                xs = range(len(seq))
+                xs = list(range(len(seq)))
+                
+                # Convert to float for plotting if values are reasonable
+                plot_seq = seq
+                if max(seq) < 1e15:  # Safe for float conversion
+                    plot_seq = [float(x) for x in seq]
                 
                 # Main trajectory
-                self.ax.plot(xs, seq, color=color, alpha=0.7, linewidth=1.5,
+                self.ax.plot(xs, plot_seq, color=color, alpha=0.7, linewidth=1.5,
                            label=f"{map_key[0]}x{map_key[1]:+d} @ {start}" 
                            if len(seqs) == 1 else None)
                 
-                self.ax.scatter(xs, seq, s=node_size, color=color, 
+                self.ax.scatter(xs, plot_seq, s=node_size, color=color, 
                               alpha=0.8, edgecolors='white', linewidth=0.5)
 
                 # Cycle highlighting
                 if cycled:
-                    cycle_x = range(len(seq) - len(cycle), len(seq))
-                    self.ax.scatter(cycle_x, cycle, s=glow_size,
+                    cycle_x = list(range(len(seq) - len(cycle), len(seq)))
+                    plot_cycle = cycle if max(cycle) < 1e15 else [float(x) for x in cycle]
+                    self.ax.scatter(cycle_x, plot_cycle, s=glow_size,
                                   color=color, alpha=0.15, marker='o')
                     # Add cycle border
-                    self.ax.plot(cycle_x, cycle, color=color, linewidth=3,
+                    self.ax.plot(cycle_x, plot_cycle, color=color, linewidth=3,
                                alpha=0.4, linestyle='--')
 
                 # Peak markers
                 if self.show_peaks.get():
                     for i in range(1, len(seq) - 1):
                         if seq[i] > seq[i-1] and seq[i] > seq[i+1]:
-                            self.ax.scatter([i], [seq[i]], s=node_size*2,
+                            plot_val = float(seq[i]) if seq[i] < 1e15 else seq[i]
+                            self.ax.scatter([i], [plot_val], s=node_size*2,
                                           marker='^', color='yellow',
                                           edgecolors='red', linewidth=2,
                                           zorder=10)
 
                 # Labels
                 if self.show_labels.get():
-                    self.draw_labels(xs, seq, label_size)
+                    self.draw_labels(xs, plot_seq, label_size)
 
         self.ax.set_xlabel("Step", color=self.theme["text"], fontsize=12)
         self.ax.set_ylabel("Value", color=self.theme["text"], fontsize=12)
@@ -476,7 +675,8 @@ class CollatzVisualizer(tk.Tk):
         step = max(1, len(xs) // 20)  # Limit label density
         for i, (x, y) in enumerate(zip(xs, ys)):
             if i % step == 0 and y < 99999:
-                self.ax.text(x, y, str(y), fontsize=fontsize,
+                self.ax.text(x, y, str(int(y)) if isinstance(y, float) else str(y), 
+                           fontsize=fontsize,
                            color=self.theme["text"], ha="center",
                            va="bottom", alpha=0.7)
 
@@ -497,30 +697,45 @@ class CollatzVisualizer(tk.Tk):
                 self.ax.grid(True, alpha=0.2, color=self.theme["text"])
 
             scale = self.compute_visual_scale()
-            node_size = np.clip(60 * scale, NODE_MIN, NODE_MAX)
-            glow_size = np.clip(900 * scale, GLOW_MIN, GLOW_MAX)
-            label_size = np.clip(9 * scale, LABEL_MIN, LABEL_MAX)
+            node_size = max(NODE_MIN, min(NODE_MAX, 60 * scale))
+            glow_size = max(GLOW_MIN, min(GLOW_MAX, 900 * scale))
+            label_size = max(LABEL_MIN, min(LABEL_MAX, 9 * scale))
 
             for seqs in self.results.values():
                 for _, seq, cycle, cycled, color in seqs:
+                    if not seq:  # Skip empty sequences
+                        continue
+                        
                     f = min(frame, len(seq))
-                    xs = range(f)
+                    if f == 0:  # Skip if frame is before sequence starts
+                        continue
+                        
+                    xs = list(range(f))
                     ys = seq[:f]
+                    
+                    if not ys:  # Double check ys is not empty
+                        continue
+                    
+                    # Convert for plotting
+                    plot_ys = ys if max(ys) < 1e15 else [float(x) for x in ys]
 
-                    self.ax.plot(xs, ys, color=color, alpha=0.7, linewidth=1.5)
-                    self.ax.scatter(xs, ys, s=node_size, color=color, alpha=0.8)
+                    self.ax.plot(xs, plot_ys, color=color, alpha=0.7, linewidth=1.5)
+                    self.ax.scatter(xs, plot_ys, s=node_size, color=color, alpha=0.8)
 
-                    if cycled and f >= len(seq):
-                        cycle_x = range(len(seq) - len(cycle), len(seq))
-                        self.ax.scatter(cycle_x, cycle, s=glow_size,
+                    if cycled and f >= len(seq) and cycle:
+                        cycle_x = list(range(len(seq) - len(cycle), len(seq)))
+                        plot_cycle = cycle if max(cycle) < 1e15 else [float(x) for x in cycle]
+                        self.ax.scatter(cycle_x, plot_cycle, s=glow_size,
                                       color=color, alpha=0.15)
 
-                    if self.show_labels.get():
-                        self.draw_labels(xs, ys, label_size)
+                    if self.show_labels.get() and plot_ys:
+                        self.draw_labels(xs, plot_ys, label_size)
 
             self.ax.set_title(f"Collatz Trajectories - Step {frame}/{max_len}",
                             color=self.theme["text"], fontsize=16)
             self.ax.tick_params(colors=self.theme["text"])
+            self.ax.set_xlabel("Step", color=self.theme["text"], fontsize=12)
+            self.ax.set_ylabel("Value", color=self.theme["text"], fontsize=12)
 
         self.animation = FuncAnimation(self.fig, update,
                                       frames=max_len + 5,
@@ -529,7 +744,7 @@ class CollatzVisualizer(tk.Tk):
 
     def redraw(self):
         """Redraw without recomputing"""
-        if not self.animate_var and self.results:
+        if not self.animate_var.get() and self.results:
             self.draw_static()
 
     # --------------------------------------------------
@@ -590,10 +805,17 @@ class CollatzVisualizer(tk.Tk):
                 even_ratio = (analysis["even_count"] / analysis["length"] * 100
                             if analysis["length"] > 0 else 0)
                 
+                # Format large numbers
+                max_val = analysis['max_value']
+                if max_val > 1e12:
+                    max_str = f"{max_val:.2e}"
+                else:
+                    max_str = f"{max_val:,}"
+                
                 tree.insert("", "end", values=(
                     start,
                     analysis["length"],
-                    f"{analysis['max_value']:,}",
+                    max_str,
                     f"{analysis['mean']:.1f}",
                     analysis["trajectory"],
                     analysis["cycle_length"],
@@ -621,6 +843,13 @@ class CollatzVisualizer(tk.Tk):
         lengths = [a["length"] for _, a in analyses]
         max_vals = [a["max_value"] for _, a in analyses]
 
+        # Format largest value
+        largest = max(max_vals)
+        if largest > 1e12:
+            largest_str = f"{largest:.2e}"
+        else:
+            largest_str = f"{largest:,}"
+
         summary = f"""
 ╔═══════════════════════════════════════════════╗
 ║          STATISTICAL SUMMARY                  ║
@@ -631,9 +860,9 @@ class CollatzVisualizer(tk.Tk):
 ║ Terminated: {trajectories.get('Terminated', 0):<32} ║
 ║ Collapsed: {trajectories.get('Collapsed', 0):<33} ║
 ╠═══════════════════════════════════════════════╣
-║ Avg Steps: {np.mean(lengths):.1f}{' '*(33-len(f'{np.mean(lengths):.1f}'))}║
+║ Avg Steps: {safe_mean(lengths):.1f}{' '*(33-len(f'{safe_mean(lengths):.1f}'))}║
 ║ Max Steps: {max(lengths):<33} ║
-║ Largest Value Reached: {max(max_vals):,}{' '*(20-len(f'{max(max_vals):,}'))}║
+║ Largest Value Reached: {largest_str}{' '*(20-len(largest_str))}║
 ╚═══════════════════════════════════════════════╝
         """
         return summary
@@ -678,16 +907,23 @@ class CollatzVisualizer(tk.Tk):
 
             output.append(f"Number of orbits computed: {len(analyses)}")
             output.append(f"\nStep Statistics:")
-            output.append(f"  Mean: {np.mean(lengths):.2f}")
-            output.append(f"  Median: {np.median(lengths):.2f}")
-            output.append(f"  Std Dev: {np.std(lengths):.2f}")
+            output.append(f"  Mean: {safe_mean(lengths):.2f}")
+            output.append(f"  Median: {safe_median(lengths):.2f}")
+            output.append(f"  Std Dev: {safe_std(lengths):.2f}")
             output.append(f"  Min: {min(lengths)}")
             output.append(f"  Max: {max(lengths)}")
 
+            # Format largest value
+            largest = max(max_vals)
+            if largest > 1e12:
+                largest_str = f"{largest:.2e}"
+            else:
+                largest_str = f"{largest:,}"
+
             output.append(f"\nValue Statistics:")
-            output.append(f"  Largest value reached: {max(max_vals):,}")
-            output.append(f"  Average maximum: {np.mean(max_vals):.2f}")
-            output.append(f"  Average mean: {np.mean(means):.2f}")
+            output.append(f"  Largest value reached: {largest_str}")
+            output.append(f"  Average maximum: {safe_mean(max_vals):.2f}")
+            output.append(f"  Average mean: {safe_mean(means):.2f}")
 
             output.append(f"\nTrajectory Distribution:")
             trajectories = Counter(a["trajectory"] for _, a in analyses)
@@ -696,7 +932,7 @@ class CollatzVisualizer(tk.Tk):
                 output.append(f"  {traj}: {count} ({percentage:.1f}%)")
 
             output.append(f"\nPeak Statistics:")
-            output.append(f"  Average peaks per orbit: {np.mean(peaks):.2f}")
+            output.append(f"  Average peaks per orbit: {safe_mean(peaks):.2f}")
             output.append(f"  Max peaks in single orbit: {max(peaks)}")
 
             # Cycle analysis
@@ -705,7 +941,7 @@ class CollatzVisualizer(tk.Tk):
                 output.append(f"\nCycle Analysis:")
                 output.append(f"  Cyclic orbits: {len(cyclic)}")
                 cycle_lengths = [a["cycle_length"] for _, a in cyclic]
-                output.append(f"  Average cycle length: {np.mean(cycle_lengths):.2f}")
+                output.append(f"  Average cycle length: {safe_mean(cycle_lengths):.2f}")
                 output.append(f"  Cycle length range: {min(cycle_lengths)} - {max(cycle_lengths)}")
 
         output.append(f"\n{'=' * 70}\n")
@@ -748,13 +984,13 @@ class CollatzVisualizer(tk.Tk):
                 export_data[map_str] = []
                 
                 for start, analysis in analyses:
-                    # Convert numpy types to native Python types
+                    # Convert all values to JSON-serializable types
                     analysis_copy = {}
                     for key, value in analysis.items():
-                        if isinstance(value, (np.integer, np.floating)):
-                            analysis_copy[key] = value.item()
-                        else:
+                        if isinstance(value, (int, float, str, bool, type(None))):
                             analysis_copy[key] = value
+                        else:
+                            analysis_copy[key] = str(value)
                     
                     export_data[map_str].append({
                         "start_value": start,
