@@ -78,7 +78,9 @@
 \title{\bf Formal Verification of a Collatz Residue Sieve\\[2mm]
 \large A machine-checked correctness proof of \texttt{Residual\_Analysis.py}}
 
-\author{RobinCodes\\[1mm]
+\author{RobinCodes\thanks{The correctness audit, the Rocq development and this paper were
+produced in collaboration with an artificial-intelligence system; see the note on the use of
+artificial intelligence at the end of this paper.}\\[1mm]
 \small\href{https://github.com/RobinCodes/Collatz}{\texttt{github.com/RobinCodes/Collatz}}}
 
 \date{17 August 2026}
@@ -835,6 +837,22 @@ exceptions to the soundness statement, the program's most consequential
 possible output was the one it could not emit. That has been corrected.
 
 % ============================================================= references ===
+\section*{Note on the use of artificial intelligence}
+\label{sec:ai}
+
+The program \texttt{Residual\_Analysis.py} whose correctness is established here is the author's.
+The correctness audit that produced this paper, the Rocq development
+\texttt{proofs/CollatzSieve.v} described in Section~\ref{sec:rocq}, and the text of this paper were
+produced in collaboration with an artificial-intelligence system (Claude, Anthropic), at the
+author's direction.
+
+No result here rests on machine assertion. The Rocq development is axiom-free and contains no
+admitted proofs, so Theorem~\ref{thm:main} is checked by the Rocq kernel rather than asserted; the
+prose arguments are stated so as to be checkable by hand against that development; the computed
+data of Section~\ref{sec:data} were cross-checked against an independent implementation sharing no
+code with the one under proof; and Section~\ref{sec:limits} states explicitly what is \emph{not}
+proved.
+
 \begin{thebibliography}{9}
 
 \bibitem{terras}
