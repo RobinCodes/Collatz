@@ -1,0 +1,28 @@
+Average relative peak (geometric mean of max(orbit(n))/n) and average path length,
+over seeds n = 1..5000.
+'RUN' = every seed exceeded the value or step budget (runaway).
+==============================================================================
+
+AVERAGE RELATIVE PEAK
+  a\b         0        1        2        3        4        5        6        7        8
+    0     1.000    1.000    1.000    1.000    1.000    1.001    1.001    1.001    1.001
+    1     1.000    1.001      RUN    1.003      RUN    1.004      RUN    1.006      RUN
+    2     1.414      RUN    1.417      RUN      RUN      RUN    1.421      RUN      RUN
+    3       RUN    4.554      RUN    5.292      RUN    3.952      RUN    3.894      RUN
+    4     2.378      RUN      RUN      RUN    2.384      RUN      RUN      RUN      RUN
+    5       RUN   18.331      RUN    7.637      RUN   12.971      RUN   16.120      RUN
+    6       RUN      RUN    8.614      RUN      RUN      RUN    9.888      RUN      RUN
+    7       RUN    2.376      RUN    2.220      RUN    7.659      RUN    3.072      RUN
+    8     4.362      RUN      RUN      RUN      RUN      RUN      RUN      RUN    4.376
+
+AVERAGE PATH LENGTH
+  a\b         0        1        2        3        4        5        6        7        8
+    0      3.00     3.00     3.99     3.00     4.99     3.00     3.99     3.00     5.99
+    1      2.00    17.76      RUN    17.22      RUN    18.99      RUN    17.41      RUN
+    2      2.50      RUN    23.16      RUN      RUN      RUN    22.28      RUN      RUN
+    3       RUN    78.59      RUN    66.05      RUN    51.88      RUN    60.60      RUN
+    4      3.25      RUN      RUN      RUN    28.57      RUN      RUN      RUN      RUN
+    5       RUN    47.35      RUN    28.24      RUN    33.79      RUN    80.64      RUN
+    6       RUN      RUN   104.33      RUN      RUN      RUN    87.55      RUN      RUN
+    7       RUN    14.87      RUN    12.96      RUN    42.47      RUN    15.27      RUN
+    8      4.12      RUN      RUN      RUN      RUN      RUN      RUN      RUN    33.97

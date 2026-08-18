@@ -1,0 +1,62 @@
+carykh's 6x6 grid (a = 0..5 down, b = 0..5 across), fully resolved
+==============================================================================
+
+  0x+0    constant             ALL ORBITS REACH A FIXED POINT   
+  0x+1    constant             ALL ORBITS EVENTUALLY PERIODIC   
+  0x+2    constant             ALL ORBITS EVENTUALLY PERIODIC   -> 0x+1
+  0x+3    constant             ALL ORBITS EVENTUALLY PERIODIC   
+  0x+4    constant             ALL ORBITS EVENTUALLY PERIODIC   -> 0x+1
+  0x+5    constant             ALL ORBITS EVENTUALLY PERIODIC   
+  1x+0    pure-cycle           ALL ORBITS EVENTUALLY PERIODIC   
+  1x+1    descent              ALL ORBITS EVENTUALLY PERIODIC   
+  1x+2    parity-runaway       ALL ORBITS DIVERGE               
+  1x+3    descent              ALL ORBITS EVENTUALLY PERIODIC   
+  1x+4    parity-runaway       ALL ORBITS DIVERGE               
+  1x+5    descent              ALL ORBITS EVENTUALLY PERIODIC   
+  2x+0    pure-cycle           ALL ORBITS EVENTUALLY PERIODIC   -> 1x+0
+  2x+1    parity-runaway       ALL ORBITS DIVERGE               
+  2x+2    halving-reducible    ALL ORBITS EVENTUALLY PERIODIC   -> 1x+1
+  2x+3    parity-runaway       ALL ORBITS DIVERGE               
+  2x+4    halving-reducible    ALL ORBITS DIVERGE               -> 1x+2
+  2x+5    parity-runaway       ALL ORBITS DIVERGE               
+  3x+0    pure-runaway         ALL ORBITS DIVERGE               
+  3x+1    primitive            OPEN                             
+  3x+2    parity-runaway       ALL ORBITS DIVERGE               
+  3x+3    attracting-reducible OPEN                             -> 3x+1
+  3x+4    parity-runaway       ALL ORBITS DIVERGE               
+  3x+5    primitive            OPEN                             
+  4x+0    pure-cycle           ALL ORBITS EVENTUALLY PERIODIC   -> 1x+0
+  4x+1    parity-runaway       ALL ORBITS DIVERGE               
+  4x+2    halving-reducible    ALL ORBITS DIVERGE               -> 2x+1
+  4x+3    parity-runaway       ALL ORBITS DIVERGE               
+  4x+4    halving-reducible    ALL ORBITS EVENTUALLY PERIODIC   -> 1x+1
+  4x+5    parity-runaway       ALL ORBITS DIVERGE               
+  5x+0    pure-runaway         ALL ORBITS DIVERGE               
+  5x+1    primitive            OPEN                             
+  5x+2    parity-runaway       ALL ORBITS DIVERGE               
+  5x+3    primitive            OPEN                             
+  5x+4    parity-runaway       ALL ORBITS DIVERGE               
+  5x+5    attracting-reducible OPEN                             -> 5x+1
+
+family tally over the 36 cells:
+  parity-runaway         12
+  constant               6
+  halving-reducible      4
+  primitive              4
+  pure-cycle             3
+  descent                3
+  pure-runaway           2
+  attracting-reducible   2
+
+carykh's nine 'unique' universes (a, b both odd, both >= 1):
+  1x+1   SOLVED: every orbit cycles
+  1x+3   SOLVED: every orbit cycles
+  1x+5   SOLVED: every orbit cycles
+  3x+1   open
+  3x+3   open  (equivalent to 3x+1)
+  3x+5   open
+  5x+1   open
+  5x+3   open
+  5x+5   open  (equivalent to 5x+1)
+
+  => genuinely open and pairwise inequivalent: 3x+1, 3x+5, 5x+1, 5x+3

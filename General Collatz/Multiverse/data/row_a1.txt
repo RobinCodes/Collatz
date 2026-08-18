@@ -1,0 +1,46 @@
+Cycle census for f(x) = 1x + b,  b odd <= 79
+search: seeds 1..20000, step budget 200000
+counts are LOWER BOUNDS -- a cycle whose basin misses the seed window is not found
+==============================================================================
+
+    b  cycles  primitive    normal form  notes
+    1       1          1 1x+1           
+    3       2          1 1x+3           repelling 3^1
+    5       2          1 1x+5           repelling 5^1
+    7       3          2 1x+7           repelling 7^1
+    9       3          1 1x+9           repelling 3^2
+   11       2          1 1x+11          repelling 11^1
+   13       2          1 1x+13          repelling 13^1
+   15       5          2 1x+15          repelling 3^1,5^1
+   17       3          2 1x+17          repelling 17^1
+   19       2          1 1x+19          repelling 19^1
+   21       6          2 1x+21          repelling 3^1,7^1
+   23       3          2 1x+23          repelling 23^1
+   25       3          1 1x+25          repelling 5^2
+   27       4          1 1x+27          repelling 3^3
+   29       2          1 1x+29          repelling 29^1
+   31       7          6 1x+31          repelling 31^1
+   33       5          2 1x+33          repelling 3^1,11^1
+   35       6          2 1x+35          repelling 5^1,7^1
+   37       2          1 1x+37          repelling 37^1
+   39       5          2 1x+39          repelling 3^1,13^1
+   41       3          2 1x+41          repelling 41^1
+   43       4          3 1x+43          repelling 43^1
+   45       8          2 1x+45          repelling 3^2,5^1
+   47       3          2 1x+47          repelling 47^1
+   49       5          2 1x+49          repelling 7^2
+   51       8          4 1x+51          repelling 3^1,17^1
+   53       2          1 1x+53          repelling 53^1
+   55       5          2 1x+55          repelling 5^1,11^1
+   57       5          2 1x+57          repelling 3^1,19^1
+   59       2          1 1x+59          repelling 59^1
+   61       2          1 1x+61          repelling 61^1
+   63      13          6 1x+63          repelling 3^2,7^1
+   65       7          4 1x+65          repelling 5^1,13^1
+   67       2          1 1x+67          repelling 67^1
+   69       6          2 1x+69          repelling 3^1,23^1
+   71       3          2 1x+71          repelling 71^1
+   73       9          8 1x+73          repelling 73^1
+   75       8          2 1x+75          repelling 3^1,5^2
+   77       6          2 1x+77          repelling 7^1,11^1
+   79       3          2 1x+79          repelling 79^1

@@ -1,0 +1,69 @@
+ccchallenge.org corpus, classified
+==========================================================================
+
+snapshot: 375 papers
+
+generalised maps                   49
+cycles and lower bounds            32
+stopping time and density          15
+computation and verification       53
+logic, automata, formalisation      8
+p-adic, ergodic, analytic          13
+surveys and bibliographies          8
+other $3x+1$                      197
+
+claimed complete proofs without a refereed venue: 2
+(listed without endorsement; none is formalised on ccchallenge)
+  2025-12-10   Keshava Prasad Halemane            Collatz-Conjecture Proved and Halemane-Conjecture Proposed
+  2026         Aleksei Novgorodtsev               Algebraic Proof of the Collatz Conjecture and Universal Cl
+
+generalised-map class (the multiverse-relevant papers):
+  1978   Ernst Heppner                        Eine Bemerkung zum Hasse-Syracuse Algorithmus
+  1981   Ray P. Steiner                       On the ``$Qx+1$'' Problem, $Q$ odd
+  1981   Ray P. Steiner                       On the ``$Qx+1$'' Problem, $Q$ odd II
+  1984   Keith R. Matthews and Anthony M. Wat A generalization of Hasse's generalization of the Syracuse algorithm
+  1985   Jeffrey C. Lagarias                  The $3x  +  1$ problem and its generalizations
+  1985   Keith R. Matthews and Anthony M. Wat A Markov approach to the generalized Syracuse algorithm
+  1986   George M. Leigh                      A Markov process underlying the generalized Syracuse algorithm
+  1987   James M. Dolan, Albert  F. Gilman an A generalization of Everett's result on the Collatz $3x  +  1$ problem
+  1987   Keith R. Matthews and George M. Leig A generalization of the Syracuse algorithm to $F_q [x]$
+  1990   Robert N. Buttsworth and Keith R. Ma On some Markov matrices arising from the generalized Collatz mapping
+  1990   Zachary M. Franco                    Diophantine Approximation and the $qx  +  1$ Problem
+  1990   Zhang, Cheng Yu                      A generalization of Kakutani's conjecture
+  1992   Giovanni Venturini                   Iterates of Number Theoretic Functions with Periodic Rational Coeffici
+  1992   Ivan Korec                           The $3x  +  1$ Problem, Generalized Pascal Triangles, and Cellular Aut
+  1992   Keith R. Matthews                    Some Borel measures associated with the generalized Collatz mapping
+  1994   Günther J. Wirsching                 A Markov chain underlying the backward Syracuse algorithm
+  1995   Filippo Mignosi                      On a Generalization of the $3x  +  1$ Problem
+  1995   Stefano Brocco                       A Note on Mignosi's Generalization of the $3x+1$ Problem
+  1995   Zachary Franco and Carl Pomerance    On a Conjecture of Crandall Concerning the $qx  +  1$ Problem
+  1996   Daniel J. Bernstein and Jeffrey C. L The $3x+1$ Conjugacy Map
+  1997   Giovanni Venturini                   On a Generalization of the $3x + 1$ problem
+  1999   Edward Belaga and Maurice Mignotte   Embedding the $3x+1$ Conjecture in a $3x+d$ Context
+  1999   Manuel V. P. Garcia and Fabio A. Tal A note on the generalized $3n + 1$ problem
+  2000   Edward Belaga and Maurice Mignotte   Cyclic Structure of Dynamical Systems Associated with $3x+d$ Extension
+  2001   Jeffrey P. Dumont and Clifford A. Re Visualizing Generalized 3x+1 Function Dynamics
+  2001   Ke, Wei                              Generalization Concerning the $3x+1$ Problem
+  2001   Zarnowski, Roger E.                  Generalized inverses and the total stopping time of Collatz sequences
+  2002   Jean-Louis Rouet and Marc R. Feix    A generalization of the Collatz problem. Building cycles and a stochas
+  2003   Edward Belaga                        Effective polynomial upper bounds to perigees and numbers of $(3x+d)$-
+  2003   Wang, Xing-Yuan; Wang, Qiao Long; Fe The distribution of the fixed points on the real axis of a generalized
+  2004   Michel, Pascal                       Small Turing machines and generalized busy beaver competition
+  2004   Reiko Ohira and Michinori Yamashita  A Generalization of the Collatz problem
+  2005   Hershel M. Farkas                    Variants of the $3N+1$ problem and multiplicative semigroups
+  2005   Matthews, Keith R.                   The generalized $3x+1$ mapping
+  2006   Edward Belaga and Maurice Mignotte   The Collatz problem and its generalizations: Experimental Data. Table 
+  2006   Edward Belaga and Maurice Mignotte   The Collatz problem and its generalizations: Experimental Data. Table 
+  2007   John L. Simons                       A simple (inductive) proof for  the non-existence of $2$-cycles for th
+  2007   Stuart A. Kurtz and Janos Simon      The undecidability of the generalized Collatz problem
+  2007   Xing-yuan Wang  and  Xue-jing Yu     Visualizing generalized $3x+1$ function dynamics based on fractal
+  2008   Bart Snapp and Matt Tracy            The Collatz problem and Analogues
+  2008   John L. Simons                       On the (non)-existence of $m$-cycles for generalized Syracuse sequence
+  2008   Kenneth Hicks and Gary L. Mullen and A Polynomial Analogue of the $3N+1$ Problem?
+  2008   Wang, Xing-yuan and Yu, Xue-jing     Dynamics of the generalized $3x+1$ function determined by its fractal 
+  2009   Müller, Helmut                       Über Periodenlängen and die Vermutungen von Collatz und Crandall
+  2015   Jose Capco                           Odd Collatz Sequence and Binary Representations
+  2020   Robert Santos                        On the Collatz general problem qn+1
+  2021   Emre Yolcu and Scott Aaronson and Ma An automated approach to the Collatz conjecture.
+  2024   Maxwell Charles Siegel               {p, q}-adic Analysis and the Collatz Conjecture
+  2026   Aleksei Novgorodtsev                 Algebraic Proof of the Collatz Conjecture and Universal Classification

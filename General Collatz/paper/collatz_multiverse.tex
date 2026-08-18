@@ -1,0 +1,3409 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\newcolumntype{L}{>{\raggedright\arraybackslash}p{0.62\textwidth}}
+\newcolumntype{R}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+
+% ------------------------------------------------------------------ floats --
+% Large tables in a long document jam the float queue: once one cannot be
+% placed, every later float waits behind it, and they all end up dumped after
+% the bibliography.  Relax the placement fractions so a big table may occupy
+% most of a page, and put a barrier at every section so nothing drifts out of
+% the section that discusses it.
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.72}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{6}
+\let\mvoldsection\section
+\renewcommand{\section}{\FloatBarrier\mvoldsection}
+
+\hypersetup{
+  pdftitle={The Generalised Collatz Multiverse},
+  pdfauthor={RobinCodes},
+  pdfsubject={Number theory, discrete dynamical systems},
+  pdfkeywords={Collatz conjecture, 3x+1 problem, generalised Collatz maps,
+    qx+1, 3x+d, cycles, normal form},
+  colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue!55!black
+}
+
+% ---------------------------------------------------------------- theorems --
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{heuristic}[theorem]{Heuristic}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+% ---------------------------------------------------------------- colours ---
+\definecolor{gCon} {HTML}{DCE9F7}   % a = 0
+\definecolor{gShp} {HTML}{DFF3E0}   % b = 0, power of two
+\definecolor{gRun} {HTML}{F6DDDD}   % runaway
+\definecolor{gHal} {HTML}{EFEAF7}   % halving-reducible
+\definecolor{gAtt} {HTML}{FBEEDA}   % attraction-reducible
+\definecolor{gDes} {HTML}{E4F2F4}   % a = 1 descent
+\definecolor{gOpen}{HTML}{FFF6A8}   % open
+\newcommand{\cell}[2]{\cellcolor{#1}\textbf{\footnotesize #2}}
+\newcommand{\solved}[1]{\textcolor{green!45!black}{\textsc{solved} --- #1}}
+\newcommand{\reduc}[1]{\textcolor{orange!70!black}{\textsc{reduces} --- #1}}
+\newcommand{\openv}[1]{\textcolor{red!70!black}{\textsc{#1}}}
+\newcommand{\ok}{\textcolor{green!45!black}{\textbf{pass}}}
+\newcommand{\bad}{\textcolor{red!70!black}{\textbf{fail}}}
+\newcommand{\rn}{{\color{red!60!black}\textsc{run}}}
+
+% -------------------------------------------------------------- listings ----
+\lstdefinestyle{py}{
+  basicstyle=\footnotesize\ttfamily, keywordstyle=\color{blue!60!black},
+  commentstyle=\color{gray}\itshape, stringstyle=\color{green!40!black},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=8pt,
+  frame=leftline, framesep=6pt, rulecolor=\color{gray!40},
+  showstringspaces=false, breaklines=true, language=Python, xleftmargin=1.2em
+}
+
+% ---------------------------------------------------------------- macros ----
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Np}{\mathbb{N}_{\geq 1}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Tab}{T_{a,b}}
+\newcommand{\vp}{v_p}
+\newcommand{\vtwo}{v_2}
+\newcommand{\Cyc}{\mathrm{Cyc}}
+\newcommand{\PCyc}{\mathrm{Cyc}^{\ast}}
+\newcommand{\oddpart}{\mathrm{odd}}
+\newcommand{\normalform}{\mathrm{nf}}
+
+\begin{document}
+
+% =============================================================== title ======
+\title{\bf The Generalised Collatz Multiverse\\[2mm]
+\large Symmetries, reductions and fates of the maps
+$n \mapsto n/2$ (even), $n \mapsto an+b$ (odd)}
+
+\author{RobinCodes\thanks{This paper, the accompanying software and the
+verification suite were produced in collaboration with an artificial-intelligence
+system; see the note on the use of artificial intelligence in
+Section~\ref{sec:ai}.}\\[1mm]
+\small\href{https://github.com/RobinCodes/Collatz}{\texttt{github.com/RobinCodes/Collatz}}}
+
+\date{18 August 2026}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+For integers $a,b \geq 0$ let $\Tab$ send $n$ to $n/2$ when $n$ is even and to
+$an+b$ when $n$ is odd, so that $T_{3,1}$ is the Collatz map. We give a
+structure theory for this two-parameter family, over $\Z$.
+
+Two symmetries and one dichotomy account for all of it. The pair $(2a,2b)$ is
+a time change of $(a,b)$; the map $n \mapsto dn$ embeds $(a,b)$ into $(a,db)$
+for odd $d$; and for each odd prime $p$ the quantity $\min(v_{p}(n),v_{p}(b))$
+either climbs to $v_{p}(b)$ and sticks, when $p \mid a$, or is exactly
+conserved, when $p \nmid a$. We show these are the \emph{only} affine
+equivalences, so the multiplier $a$ can never change; that they form a
+terminating, confluent rewriting system whose normal form is always coprime;
+and that after reduction every universe is one of four families we solve
+completely, or else has $a \geq 3$ odd, $b$ odd and $\gcd(a,b)=1$, where the
+problem is open. Exactly $1/3$ of all universes are open, and $2/\pi^{2}$ are
+open and irreducible; the rest are either settled or are a smaller universe in
+disguise.
+
+The conserved valuations partition a coprime universe into $\tau(b)$
+mutually unreachable strata indexed by the divisors of $b$, which decomposes
+its cycle set exactly. We also determine when $1$ itself is periodic, and
+sharpen the row $a=1$ enough to make its cycle census exact rather than a
+lower bound. Two further chapters ask what survives modulo $q$ rather than
+modulo $2$, and what survives when the branch is chosen by a property that is
+not a congruence at all; the answer to the second is essentially nothing, and
+we argue that this, rather than any difficulty of degree, is what separates
+$3x+1$ from its neighbours.
+
+The framing and many of the phenomena are due to carykh and to Artem, who
+found them experimentally; we attribute each result and correct three
+conjectures, with counterexamples in $2x+1$, $5x+1$ and $3x+7$. Every theorem
+is accompanied by a machine-run check, over $3 \times 10^{6}$ cases in total.
+\end{abstract}
+
+% =============================================================== intro ======
+\section{Introduction}
+
+The Collatz conjecture concerns the map that halves even numbers and sends an
+odd $n$ to $3n+1$. Its resistance to proof is famous, and Erd\H{o}s'
+assessment --- that mathematics is not ready for such problems --- is still
+quoted. Less often asked is what happens when the constants $3$ and $1$ are
+changed. Writing
+\[
+  \Tab(n) \;=\;
+  \begin{cases}
+    n/2 & n \text{ even},\\
+    a n + b & n \text{ odd},
+  \end{cases}
+  \qquad a \in \Z_{\geq 0},\ b \in \Z,
+\]
+one obtains a two-parameter family --- a \emph{multiverse}, in the coinage of
+the YouTube mathematician carykh~\cite{carykh}, whose video animates the
+$6 \times 6$ grid $0 \leq a, b \leq 5$ and observes that most of its cells are
+in some way degenerate. A follow-up ramble~\cite{lazykh} and a reply video by
+Artem~\cite{artem} push the observations further, in particular into the
+row $a = 3$.
+
+Those three sources are experimental. They exhibit striking regularities ---
+that even-indexed cells duplicate their halves, that $3x+3$ is a scaled copy
+of $3x+1$ but $3x+5$ is not, that $3x+9$ takes two odd steps to become a copy
+where $3x+3$ takes one, that composite offsets contain a copy of every divisor
+--- but they state them as patterns observed rather than as theorems, and they
+leave the boundary between what is solved and what is open unmapped. This
+paper draws that boundary.
+
+\paragraph{What is proved here.}
+\begin{enumerate}\itemsep3pt
+\item \textbf{Rigidity} (Theorem~\ref{thm:rigid}). The only affine maps
+      intertwining two members of the family are $n \mapsto dn$ with $d$ an
+      odd integer, and they satisfy $a' = a$, $b' = db$. So the multiplier $a$
+      is a complete invariant of a row: no affine change of variable will ever
+      relate $3x+1$ to $5x+1$. In particular the relation between $(2a,2b)$
+      and $(a,b)$ --- carykh's ``even parallel universes'' --- is \emph{not} a
+      conjugacy; it is a time change, and we give its exact form
+      (Proposition~\ref{prop:halve}).
+\item \textbf{$p$-adic stratification} (Theorem~\ref{thm:strat}). For an odd
+      prime $p$, the behaviour of $\vp$ along an orbit is governed entirely by
+      whether $p$ divides $a$. If it does, $\min(\vp(n),\vp(b))$ strictly
+      increases at every odd step until it reaches $\vp(b)$, so
+      $p^{\vp(b)}\Z$ is a global attractor; if it does not,
+      $\min(\vp(n),\vp(b))$ is exactly conserved, so the state space splits.
+      This is the theorem behind Artem's connected/disconnected dichotomy and
+      behind carykh's ``factor loyalty''.
+\item \textbf{Normal form} (Theorem~\ref{thm:nf}). Halving and attraction form
+      a terminating, confluent rewriting system; the normal form
+      $\normalform(a,b)$ is unique and always satisfies $\gcd = 1$. Both rules
+      preserve the fate of every orbit and act bijectively on cycles.
+\item \textbf{Master classification} (Theorem~\ref{thm:master}). Every
+      universe is exactly one of: constant ($a=0$), pure ($b=0$), parity
+      runaway ($a+b$ odd), descent ($a=1$), or primitive. The first four are
+      solved here, completely and with explicit cycle data. The fifth is open.
+\item \textbf{Densities} (Theorem~\ref{thm:density}). The open universes have
+      density exactly $1/3$; the open \emph{irreducible} ones have density
+      $2/\pi^{2}$.
+\item \textbf{Stratification and cycle decomposition}
+      (Theorem~\ref{thm:strata}, Corollary~\ref{cor:cycdec}). A coprime
+      universe partitions into $\tau(b)$ invariant strata indexed by the
+      divisors of $b$, and its cycle set is the corresponding disjoint union
+      $\bigsqcup_{d \mid b} d \cdot \PCyc(T_{a,b/d})$.
+\item \textbf{Over $\Z$} (Proposition~\ref{prop:Zsplit}). The positive
+      integers are invariant exactly when $a+b \geq 1$ and the negative ones
+      exactly when $b \leq a-1$; sign changes only at odd $n$ with
+      $|n| \leq |b|/a$, so every orbit changes sign at most once. The negative
+      half of $3x+1$ is the positive half of $3x-1$.
+\item \textbf{The cycle through $1$} (Theorem~\ref{thm:one}). It is periodic
+      exactly when its forward orbit meets a power of two; $a+b = 2^{k}$ is
+      the one-step case, and accounts for $93$ of the $147$ instances we
+      found.
+\item \textbf{Two chapters outward} (Sections~\ref{sec:qmulti}
+      and~\ref{sec:beyond}). Modulo $q$: both symmetries survive, the parity
+      obstruction becomes a residue graph, the threshold $a<4$ becomes
+      $\prod a_{i} < q^{q}$, and rigidity fails. Beyond congruences: the
+      theory applies to eventually periodic branch predicates and to nothing
+      else, which we argue is the real reason $3x+1$ is tractable at all.
+\end{enumerate}
+
+\paragraph{Software.}
+Everything computational here is produced by the \texttt{Multiverse}
+package. Its modules are \texttt{multiverse.py} for the two-parameter
+family, \texttt{qary.py} for Sections~\ref{sec:qmulti}
+and~\ref{sec:beyond}, and \texttt{literature.py} for
+Appendix~\ref{app:lit}; \texttt{generate\_data.py} drives them, and
+\texttt{Collatz\_Program.py} is the interactive front end. All of it lives in
+the repository~\cite{repo}.
+Section~\ref{sec:software} describes them and Section~\ref{sec:verif} reports
+the verification suite. No number in this paper was transcribed by hand.
+
+\subsection{Related work}
+\label{sec:related}
+
+The $3x+1$ problem itself has an enormous literature, surveyed by
+Lagarias~\cite{lagarias,lagariasbook} and catalogued in his annotated
+bibliographies~\cite{lagbib1,lagbib2,lagbib3}. We use only a few landmarks:
+Terras~\cite{terras} showed almost every $n$ has finite stopping time;
+Eliahou~\cite{eliahou} constrained the possible periods of a nontrivial
+cycle; Tao~\cite{tao} showed almost all orbits attain almost bounded values;
+Hercher~\cite{hercher} ruled out $m$-cycles for $m \leq 91$; and
+Barina~\cite{barina} pushed numerical verification past $2^{71}$.
+Gon\c{c}alves, Greenfeld and Madrid~\cite{ggm} extended Tao's method to a
+class of generalized maps.
+
+Generalisation of the constants is older than it looks.
+Crandall~\cite{crandall} introduced the $qx+1$ maps in 1978 and devoted a
+section to the general $qx+r$; his conjecture --- that for odd $q > 3$ the map
+$qx+1$ has an orbit not reaching $1$ --- was proved for almost all $q$ in the
+sense of asymptotic density by Franco and Pomerance~\cite{fp}.
+Santos~\cite{santos} treats $qn+1$ extensively, establishing finiteness of the
+periodic orbits and settling $q = 2^{k}-1$.
+Belaga and Mignotte~\cite{bm} study $3x+d$, which is the row $a = 3$ of our
+grid. Matthews~\cite{matthews} develops a different generalisation, with
+several branches and a Markov-chain/ergodic analysis, closer to the $q$-ary
+map of Section~\ref{sec:qary} than to the two-parameter family here.
+
+Two facts from that literature bound what this paper can hope to do. First,
+Conway~\cite{conway} showed that generalized Collatz functions are universal,
+and Kurtz and Simon~\cite{kurtzsimon} that the associated reachability problem
+is $\Pi^{0}_{2}$-complete; so no classification theorem can cover the
+unrestricted $q$-ary family. Second, Franco and Pomerance proved Crandall's conjecture --- that $qx+1$
+admits an orbit never reaching $1$ --- for almost all odd $q$. So along the
+column $b = 1$ the rows $a \geq 5$ are not merely unproven: for almost all
+such $a$ the Collatz-style statement is known to be \emph{false}. Our contribution is orthogonal to both: it is a structure
+theory for the two-parameter slice, saying which of its members are the same
+problem and which are genuinely distinct.
+
+Finally, the multiverse framing that prompted this paper is due to
+carykh~\cite{carykh,lazykh} and Artem~\cite{artem}, and the community site
+collatzresearch.org~\cite{cresearch} collects related experimental work.
+Section~\ref{sec:attrib} attributes each individual result.
+
+\subsection{Prior work on the generalised maps}
+\label{sec:priorgen}
+
+Because this paper claims a structure theory for a family that has been
+studied for fifty years, we owe the reader a precise account of what was
+already known. We surveyed the corpus catalogued by
+ccchallenge.org~\cite{ccc} --- $375$ papers at the time of writing --- and
+classified it (Appendix~\ref{app:lit}); $49$ of those papers concern
+generalised maps. The following are the ones that overlap this paper.
+
+\paragraph{The column $b = 1$.}
+Crandall~\cite{crandall} posed the $qx+1$ problem;
+Steiner~\cite{steiner1981a,steiner1981b} studied $Qx+1$ for odd $Q$ and
+Franco~\cite{franco1990} connected the cycle problem to Diophantine
+approximation, which is the analytic content behind our
+Theorem~\ref{thm:cyceq}: a cycle needs $2^{m}/a^{k}$ close to $1$, hence
+needs a good rational approximation to $\log_{2}a$. Franco and
+Pomerance~\cite{fp} then proved Crandall's conjecture for almost all $q$ in
+the sense of asymptotic density, and Santos~\cite{santos} established
+finiteness of the cycle set for each $q$ and settled $q = 2^{k}-1$. Our
+row $b=1$ (Table~\ref{tab:colb1}) is a census inside their setting, not a
+competitor to it.
+
+\paragraph{The row $a = 3$.}
+This is the closest prior work, and it anticipates part of
+Section~\ref{sec:nf}. Belaga and Mignotte~\cite{bm} embed $3x+1$ in the
+$3x+d$ family and --- crucially --- restrict throughout to $d$ coprime to
+$6$, that is, $d$ odd and not divisible by $3$. That restriction is exactly
+our normal form specialised to $a = 3$: by Theorem~\ref{thm:nf} the even $d$
+reduce by halving and the multiples of $3$ reduce by attraction, so nothing
+is lost. They state the \emph{$3x+d$ conjecture} --- that each such $d$ admits
+only finitely many cycles --- and their Proposition~3.1, that the fixed
+points of the accelerated map are $n = d/(2^{k}-3)$, is the $k=1$ case of the
+cycle equation. Belaga~\cite{belaga2003} gives polynomial upper bounds on the
+number and size of $(3x+d)$-cycles of given odd length, and Belaga and
+Mignotte~\cite{bm2006} tabulate the \emph{primitive} cycles of $3x+d$ ---
+their term, and their notion agrees with ours: a cycle no element of which
+shares a factor with $d$. Simons~\cite{simons2008} bounds $m$-cycles for
+generalised Syracuse sequences.
+
+We have not found the divisor decomposition (Corollary~\ref{cor:cycdec})
+stated as a general theorem anywhere, though it is visible in the examples
+of~\cite{bm}: their nontrivial fixed points of $S_{65}$ are $5$ and $13$,
+which in our language are $5$ times the fixed point of $S_{13}$ and $13$
+times that of $S_{5}$. What we add is that these copies \emph{exhaust} the
+cycle set, and that the same decomposition holds for the whole phase space
+(Theorem~\ref{thm:strata}).
+
+\paragraph{The $q$-ary maps.}
+Section~\ref{sec:qmulti} is the elementary layer of a subject with a
+substantial theory. Matthews and Watts~\cite{mw1984,mw1985} generalised
+Hasse's version of the Syracuse algorithm to exactly the shape of
+Section~\ref{sec:qary} and analysed it with Markov chains;
+Leigh~\cite{leigh1986} and Buttsworth and Matthews~\cite{bmatthews1990}
+developed the Markov-matrix machinery, and Matthews~\cite{matthews,matthews2005}
+surveys it. Venturini~\cite{venturini1992,venturini1997} studies the same
+maps as \emph{periodically linear} functions, which is the terminology of our
+Proposition~\ref{prop:congpred}. Mignosi~\cite{mignosi1995} and
+Brocco~\cite{brocco1995} treat a related generalisation, and Rouet and
+Feix~\cite{rouetfeix} construct cycles and give a stochastic model.
+Matthews and Leigh~\cite{mleigh1987} and Hicks et al.~\cite{hicks2008} move
+to polynomial rings, where the analogue of the conjecture is provable. Our
+contribution at $q \geq 3$ is only Propositions~\ref{prop:qscale}
+and~\ref{prop:qtwist} and Theorem~\ref{thm:resobs}, which we have not found
+stated in this form, and the drift threshold $q^{q}$.
+
+\paragraph{Undecidability.}
+Conway~\cite{conway} and Kurtz and Simon~\cite{kurtzsimon} bound the whole
+programme from above, as discussed above and in Section~\ref{sec:beyond}.
+
+% ============================================================ definitions ===
+\section{The family}
+\label{sec:family}
+
+\begin{definition}\label{def:map}
+For $a \in \Z_{\geq 0}$ and $b \in \Z$ define $\Tab : \Z \to \Z$ by
+$\Tab(n) = n/2$ for $n$ even and $\Tab(n) = an+b$ for $n$ odd. We call the
+pair $(a,b)$ a \emph{universe} and write it $ax+b$. The phase space is $\Z$;
+Proposition~\ref{prop:Zsplit} says when each half-line is invariant, and
+Proposition~\ref{prop:neg} reduces $b < 0$ to $b > 0$, so the classification
+of Section~\ref{sec:solved} is stated for $b \geq 0$ without loss.
+\end{definition}
+
+\subsection{The general \texorpdfstring{$q$}{q}-ary map}
+\label{sec:qary}
+
+Definition~\ref{def:map} is the case $q = 2$ of a wider family. Fix a modulus
+$q \geq 1$ and coefficients $a_{1},\dots,a_{q-1}$, $b_{1},\dots,b_{q-1}$, and
+define
+\[
+  F(n) \;=\;
+  \begin{cases}
+    a_{i}n + b_{i} & n \equiv i \pmod q,\quad 1 \leq i \leq q-1,\\[1mm]
+    n/q            & n \equiv 0 \pmod q .
+  \end{cases}
+\]
+For $q = 1$ every $n$ is divisible by $q$ and $F$ is the identity, so the
+family is trivial. Sections~\ref{sec:sym}--\ref{sec:open} study $q = 2$, the
+case with a single affine branch; we write $\Tab$ for it and call $a$ the
+\emph{multiplier} and $b$ the \emph{offset}.
+
+Most of that material is specific to $q = 2$, because it uses the fact that
+the parity of $an+b$ is forced by those of $a$, $b$ and $n$. Some of it is
+not, and Section~\ref{sec:qmulti} returns to general $q$ to say exactly which
+parts survive: both symmetries do, with $2$ replaced by $q$ and ``odd''
+replaced by ``coprime to $q$''; the parity obstruction becomes a statement
+about a finite directed graph on $\Z/q$; and rigidity fails outright.
+
+\subsection{The phase space over \texorpdfstring{$\Z$}{Z}}
+\label{sec:overZ}
+
+It is natural to take $\Np$ as the phase space, and much of the literature
+does. But $\Tab$ is defined on all of $\Z$, and restricting to the positive
+integers hides structure --- most conspicuously the three known cycles of
+$3x-1$, which are the negative-side cycles of the Collatz map itself. We
+therefore work over $\Z$ and record exactly when the sign is preserved.
+
+\begin{proposition}[Structure of $\Z$]\label{prop:Zsplit}
+Let $a \geq 1$ and $b \in \Z$.
+\begin{enumerate}\itemsep3pt
+\item[(i)] $\Tab(0) = 0$, and $\Tab(n) = 0$ for $n \neq 0$ exactly when $n$ is
+      odd with $n = -b/a$. So $\{0\}$ is a fixed point with at most one other
+      preimage.
+\item[(ii)] $\Z_{\geq 1}$ is $\Tab$-invariant if and only if $a + b \geq 1$.
+\item[(iii)] $\Z_{\leq -1}$ is $\Tab$-invariant if and only if $b \leq a - 1$.
+\item[(iv)] In all cases the sign can change only at an \emph{odd} $n$ with
+      $|n| \leq |b|/a$. Hence at most $\lceil |b|/a \rceil$ integers of each
+      sign ever cross, and every orbit is eventually confined to one of
+      $\Z_{\geq 1}$, $\{0\}$, $\Z_{\leq -1}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $0$ is even and $0/2 = 0$. If $n \neq 0$ maps to $0$ then $n$ cannot be
+even (as $n/2 = 0$ forces $n=0$), so $n$ is odd and $an + b = 0$.
+
+(ii) Halving preserves $\Z_{\geq 1}$, so invariance can fail only on the odd
+branch. For odd $n \geq 1$ the quantity $an + b$ is increasing in $n$, so its
+minimum over odd $n \geq 1$ is $a + b$, attained at $n = 1$. Thus
+$an + b \geq 1$ for all odd $n \geq 1$ iff $a + b \geq 1$.
+
+(iii) Apply (ii) to $T_{a,-b}$ and use Proposition~\ref{prop:neg}: the
+negatives of $\Tab$ are the positives of $T_{a,-b}$, which are invariant iff
+$a - b \geq 1$.
+
+(iv) Halving never changes sign, so a change of sign happens at an odd $n$.
+If $n \geq 1$ is odd and $an + b \leq 0$ then $an \leq -b$, so $b < 0$ and
+$n \leq |b|/a$; symmetrically for $n \leq -1$. That bounds the crossing set,
+which is therefore finite.
+
+For the confinement, note that in each case at least one half-line is already
+invariant, and crossings can only run \emph{into} it. If $b > 0$ then
+$a + b \geq 1$, so $\Z_{\geq 1}$ is invariant by (ii) and every crossing goes
+from negative to positive; if $b < 0$ then $b \leq a-1$, so $\Z_{\leq -1}$ is
+invariant by (iii) and every crossing goes the other way; and if $b = 0$ then
+$an$ has the sign of $n$ and there are no crossings at all. In each case an
+orbit changes sign at most once, after which it is confined.
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:Zsplit} is why the paper can state its theorems over
+$\Z$ without a case explosion. For $b \geq 0$ --- the normalisation we use
+after Proposition~\ref{prop:neg} --- part (ii) holds automatically whenever
+$a \geq 1$, so the positive integers are invariant; part (iii) then says the
+negatives are invariant precisely when $b < a$, and otherwise finitely many
+negative integers leak into $\Z_{\geq 0}$. The classical case $b = 1 < 3 = a$
+has both half-lines invariant, which is why $3x+1$ and $3x-1$ are usually
+treated as separate problems. They are the two halves of one map.
+\end{remark}
+
+\begin{definition}[Fates]\label{def:fate}
+An orbit is \emph{eventually periodic} if it repeats a value, and
+\emph{divergent} if $|{\cdot}|$ is unbounded along it. Fix an invariant set
+$S \subseteq \Z$ --- in practice $\Np$ or $\Z_{\leq -1}$, by
+Proposition~\ref{prop:Zsplit}. The \emph{fate of $\Tab$ on $S$} is
+\textsc{cyclic} if every orbit from $S$ is eventually periodic,
+\textsc{divergent} if every orbit from $S$ is divergent, and \textsc{open}
+otherwise or when unknown. An unqualified ``fate'' means the fate on $\Np$;
+by Proposition~\ref{prop:neg} the fate on $\Z_{\leq -1}$ is the fate of
+$T_{a,-b}$ on $\Np$, so the two half-lines are covered by classifying
+$(a,b)$ and $(a,-b)$. We write $\Cyc(\Tab)$ for the set of cycles in $S$,
+each normalised to begin at its least element.
+\end{definition}
+
+Two trivialities are used constantly and recorded once.
+
+\begin{lemma}\label{lem:reachodd}
+Let $n \in \Z$ with $n \neq 0$. Then the $\Tab$-orbit of $n$ contains
+infinitely many odd terms, or reaches $0$. If moreover $a \geq 1$ and
+$a + b \geq 1$ and $n \geq 1$, then $\Tab^{k}(n) \geq 1$ for all $k$.
+\end{lemma}
+
+\begin{proof}
+Halving strictly decreases $|n|$ for $n \neq 0$, so no orbit can consist of
+even nonzero terms from some point on: after at most $\vtwo(n)$ halvings an
+odd value or $0$ appears, and the same applies to every tail. The positivity
+claim is Proposition~\ref{prop:Zsplit}(ii).
+\end{proof}
+
+\begin{lemma}[Valuations]\label{lem:val}
+Let $p$ be an odd prime and $n \neq 0$. Then $\vp(n/2) = \vp(n)$ whenever $n$
+is even, and
+\[
+  \vp(an+b) \;\geq\; \min\bigl(\vp(a) + \vp(n),\; \vp(b)\bigr),
+\]
+with equality whenever $\vp(a)+\vp(n) \neq \vp(b)$. \textup{(}Here
+$\vp(0) := +\infty$.\textup{)}
+\end{lemma}
+
+\begin{proof}
+The first claim holds because $p$ is odd. The second is the ultrametric
+inequality for $\vp$ together with $\vp(an) = \vp(a)+\vp(n)$.
+\end{proof}
+
+% ============================================================== symmetries ==
+\section{The symmetries}
+\label{sec:sym}
+
+\subsection{Halving: carykh's even parallel universes}
+
+\begin{proposition}[Halving]\label{prop:halve}
+Let $U = T_{2a,2b}$ and $T = \Tab$, with $(a,b) \neq (0,0)$. Then for every
+$n$,
+\[
+  n \text{ even} \;\Longrightarrow\; U(n) = T(n),
+  \qquad
+  n \text{ odd} \;\Longrightarrow\; U(n) = 2\,T(n) \text{ is even and }
+  U^{2}(n) = T(n).
+\]
+Consequently the $U$-orbit of $n$ is obtained from the $T$-orbit of $n$ by
+inserting the single extra term $2\,T(x)$ immediately after each odd term $x$.
+In particular:
+\begin{enumerate}\itemsep2pt
+\item[(i)] $n$ is $U$-eventually-periodic iff it is $T$-eventually-periodic,
+      and $U$-divergent iff $T$-divergent; the two universes have the same
+      fate.
+\item[(ii)] $C \mapsto C \cup \{\,2\,T(x) : x \in C \text{ odd}\,\}$ is a
+      bijection $\Cyc(T) \to \Cyc(U)$, and the corresponding periods satisfy
+      $|C_{U}| = |C_{T}| + k(C_{T})$, where $k$ counts the odd terms of $C_T$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+For even $n$ both maps halve. For odd $n$, $U(n) = 2an+2b = 2(an+b) = 2T(n)$,
+which is even, so $U$ halves it next and $U^{2}(n) = an+b = T(n)$. The
+description of the orbit follows by induction, and (i) is immediate because
+the two orbits have the same set of values --- the inserted terms are
+determined by their predecessors --- and are simultaneously finite or
+unbounded. For (ii), every $U$-cycle contains an odd term by
+Lemma~\ref{lem:reachodd}, and starting from such a term the displayed
+identities read off the $T$-cycle; conversely each $T$-cycle inflates to a
+$U$-cycle. For the period: starting at $x \in C_{T}$, the insertion
+description returns to $x$ after exactly $|C_{T}| + k(C_{T})$ steps of $U$,
+and no sooner --- deleting the inserted terms from a shorter $U$-return would
+give a shorter $T$-return, contradicting the minimality of $|C_{T}|$. Since a
+periodic orbit of a map has exactly as many distinct elements as its period,
+$|C_{U}| = |C_{T}| + k(C_{T})$, and in particular the inserted terms are
+automatically distinct from the elements of $C_{T}$.
+\end{proof}
+
+Proposition~\ref{prop:halve} is carykh's observation that $4x+2$ ``is just
+$2x+1$ with more steps''~\cite{carykh}, made exact. Note what it is
+\emph{not}: the two maps are not conjugate, because $U$ takes strictly more
+steps. Theorem~\ref{thm:rigid} below shows that no conjugacy could exist.
+
+\subsection{Odd scaling: carykh's odd parallel universes}
+
+\begin{proposition}[Odd scaling]\label{prop:scale}
+Let $d$ be an odd integer. Then for every $n$,
+\[
+  T_{a,\,db}(dn) \;=\; d \cdot \Tab(n).
+\]
+Hence $d\Z$ is $T_{a,db}$-invariant and $n \mapsto dn$ is an isomorphism of
+dynamical systems from $\Tab$ onto $T_{a,db}$ restricted to $d\Z$.
+\end{proposition}
+
+\begin{proof}
+Since $d$ is odd, $dn$ and $n$ have the same parity. If $n$ is even,
+$T_{a,db}(dn) = dn/2 = d(n/2)$. If $n$ is odd,
+$T_{a,db}(dn) = a\,dn + db = d(an+b)$.
+\end{proof}
+
+\begin{example}
+$T_{5,5}$ restricted to $5\Z$ is a copy of $T_{5,1}$. carykh observed that the
+two have the identical ``cycle fingerprint'' of periods $7, 10, 10$; by
+Proposition~\ref{prop:scale} the cycles of $T_{5,5}$ that lie in $5\Z$ are
+exactly $5$ times those of $T_{5,1}$, so this is forced. Our census confirms
+that \emph{all three} cycles of $T_{5,5}$ lie in $5\Z$, which is a separate
+fact --- it is Theorem~\ref{thm:strat}(i), since $5 \mid \gcd(5,5)$.
+\end{example}
+
+\subsection{Negation}
+
+\begin{proposition}[Negation duality]\label{prop:neg}
+For all $a, b$ and all $n$, $\;T_{a,-b}(n) = -\,\Tab(-n)$. Hence $n \mapsto -n$
+conjugates $\Tab$ on $\Z_{\leq -1}$ to $T_{a,-b}$ on $\Np$.
+\end{proposition}
+
+\begin{proof}
+$n$ and $-n$ have the same parity. For $n$ even both sides are $n/2$; for $n$
+odd, $-\Tab(-n) = -(-an+b) = an - b = T_{a,-b}(n)$.
+\end{proof}
+
+So the negative half of the classical Collatz map is the positive half of
+$3x-1$, whose three known cycles begin at $1$, $5$ and $17$. Everything below
+is stated for $b \geq 0$; Proposition~\ref{prop:neg} transfers it.
+
+\subsection{Rigidity: there is nothing else}
+
+\begin{theorem}[Rigidity]\label{thm:rigid}
+Let $\varphi(n) = \lambda n + \mu$ with $\lambda \neq 0$, let $\varphi$ map
+$\Z$ into $\Z$, and suppose
+$\varphi \circ \Tab = T_{a',b'} \circ \varphi$ on $\Z$, where
+$a,b,a',b' \in \Z$ and $a' \neq 0$. Then
+\[
+  \mu = 0, \qquad \lambda \text{ is an odd integer}, \qquad
+  a' = a, \qquad b' = \lambda b .
+\]
+\end{theorem}
+
+\begin{proof}
+Taking $n = 0$ and $n = 1$ shows $\mu, \lambda + \mu \in \Z$, so
+$\lambda, \mu \in \Z$. We rule out the bad parities in turn. Throughout,
+``$\varphi(n)$ even'' selects the halving branch of $T_{a',b'}$.
+
+\emph{Case $\lambda$ even.} Then $\varphi(n) \equiv \mu \pmod 2$ for every
+$n$, so $T_{a',b'} \circ \varphi$ uses one fixed branch.
+If $\mu$ is even, evaluating the intertwining relation at even $n$ gives
+$\lambda n/2 + \mu = (\lambda n + \mu)/2$, hence $\mu = 0$; then at odd $n$ it
+gives $\lambda(an+b) = \lambda n / 2$ for all odd $n$, forcing $a = 1/2$, which
+is not an integer. If $\mu$ is odd, evaluating at even $n$ gives
+$\lambda n/2 + \mu = a'(\lambda n + \mu) + b'$ for all even $n$; comparing the
+coefficients of $n$ yields $\lambda/2 = a'\lambda$, i.e.\ $a' = 1/2$,
+again impossible.
+
+\emph{Case $\lambda$ odd, $\mu$ odd.} Then $\varphi$ reverses parity. At even
+$n$ the relation reads $\lambda n /2 + \mu = a'(\lambda n + \mu) + b'$, and
+comparing coefficients of $n$ gives $a' = 1/2$: impossible.
+
+\emph{Case $\lambda$ odd, $\mu$ even.} Then $\varphi$ preserves parity. At
+even $n$: $\lambda n/2 + \mu = (\lambda n + \mu)/2$, so $\mu = 0$. At odd $n$:
+$\lambda(an+b) = a'\lambda n + b'$ for all odd $n$; comparing coefficients
+gives $a' = a$ and $b' = \lambda b$.
+\end{proof}
+
+\begin{corollary}\label{cor:rigid}
+\begin{enumerate}\itemsep2pt
+\item[(i)] The only bijective affine conjugacies within the family are the
+      identity and $n \mapsto -n$, which gives $\Tab \cong T_{a,-b}$.
+\item[(ii)] The multiplier $a$ is an affine invariant: no affine change of
+      variable relates two universes in different rows. In particular no such
+      change of variable can reduce $5x+1$ to $3x+1$.
+\item[(iii)] Within a row, two universes are affinely related only if their
+      offsets differ by an odd factor.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+All three are immediate from Theorem~\ref{thm:rigid}, which gives $\mu = 0$,
+$\lambda$ odd, $a' = a$ and $b' = \lambda b$. For (i), a bijection of $\Z$ of
+the form $n \mapsto \lambda n$ forces $\lambda = \pm 1$, and $\lambda = -1$
+gives $b' = -b$.
+\end{proof}
+
+Corollary~\ref{cor:rigid}(ii) is worth emphasising, because it is the precise
+sense in which the rows of the multiverse are independent problems. Whatever
+resolves $3x+1$ need not touch $5x+1$.
+
+\subsection{Modified maps: what generalises, and what does not}
+\label{sec:modified}
+
+Propositions~\ref{prop:halve} and~\ref{prop:scale} both have the shape
+``post-compose the odd branch with a map $g$ and see what survives''. It is
+natural to ask how far that goes. Let $g : \Z \to \Z$ be arbitrary and set
+\[
+  T_{g}(n) \;=\;
+  \begin{cases}
+    n/2 & n \text{ even},\\
+    g(an+b) & n \text{ odd}.
+  \end{cases}
+\]
+
+\begin{proposition}[Post-composition]\label{prop:postcomp}
+For every odd $n$, $\;T_{g}(n) = g\bigl(\Tab(n)\bigr)$.
+\end{proposition}
+
+\begin{proof}
+Immediate from the definitions: both sides are $g(an+b)$.
+\end{proof}
+
+Proposition~\ref{prop:postcomp} is genuine but shallow --- it says nothing
+about the even branch, and it is the even branch that carries the dynamics.
+Taking $g(y) = 2y$ recovers $T_{g} = T_{2a,2b}$ and hence
+Proposition~\ref{prop:halve}; taking $g(y) = cy$ gives
+$T_{g} = T_{ca,\,cb}$.
+
+It is tempting to go further and claim that $g$ itself conjugates $\Tab$ to
+$T_{g}$ whenever $g$ preserves $2$-adic valuations --- in particular that for
+odd $c$, every cycle $C$ of $\Tab$ lifts to the cycle $cC$ of $T_{ca,cb}$.
+That is false, and it fails immediately.
+
+\begin{proposition}[No such conjugacy]\label{prop:noconj}
+Let $c$ be odd, $c > 1$. Then $g(y) = cy$ does not in general carry cycles of
+$\Tab$ to cycles of $T_{ca,cb}$. For example $C = \{1,4,2\}$ is a cycle of
+$T_{3,1}$ and $\vtwo(3x) = \vtwo(x)$ for every $x$, yet $3C = \{3,12,6\}$ is
+not a cycle of $T_{9,3}$: indeed $T_{9,3}(3) = 9 \cdot 3 + 3 = 30 \neq 12$.
+More generally, a map $\varphi(n) = \lambda n$ intertwines $\Tab$ with
+$T_{a',b'}$ only when $a' = a$ \textup{(}Theorem~\ref{thm:rigid}\textup{)},
+whereas $T_{ca,cb}$ has multiplier $ca \neq a$.
+\end{proposition}
+
+\begin{proof}
+The displayed computation is the counterexample. For the general statement,
+Theorem~\ref{thm:rigid} forces $a' = a$ for any affine intertwining, and
+$ca = a$ only if $c = 1$.
+\end{proof}
+
+An exhaustive check over the cycles of $T_{a,b}$ for
+$a \in \{3,5,7\}$, $b \in \{1,3,5\}$ and $c \in \{3,5,7,9\}$ finds
+\emph{no} case in which $cC$ is a cycle of $T_{ca,cb}$ --- $0$ successes out
+of $104$ --- while the same check against $T_{a,cb}$, which scales the offset
+only, succeeds in all $104$. The correct statement is
+Proposition~\ref{prop:scale}: it is the offset that may be scaled, not the
+pair. Rigidity (Theorem~\ref{thm:rigid}) explains why no repair is possible:
+$a$ is an affine invariant, so nothing that changes the multiplier can be a
+conjugacy.
+
+% ======================================================== stratification ====
+\section{The \texorpdfstring{$p$}{p}-adic stratification}
+\label{sec:strat}
+
+This section proves the dichotomy that organises the whole odd part of the
+multiverse. Fix an odd prime $p$ and write $\alpha = \vp(a)$,
+$\beta = \vp(b)$, with the convention $\vp(0) = +\infty$.
+
+\begin{theorem}[Stratification]\label{thm:strat}
+Let $a \geq 1$, $b \geq 1$, and let $p$ be an odd prime. Put
+$\Phi(n) = \min(\vp(n), \beta)$ for $n \neq 0$. \textup{(}Nothing below uses
+the sign of $n$, so the statement holds on all of $\Z \setminus \{0\}$, not
+merely on $\Np$.\textup{)}
+\begin{enumerate}\itemsep3pt
+\item[(i)] \textup{(Attraction.)} If $\alpha \geq 1$ then $\Phi$ is
+      non-decreasing along every orbit, and strictly increases at every odd
+      step at which $\Phi < \beta$. Consequently every orbit satisfies
+      $\Phi = \beta$ --- that is, lies in $p^{\beta}\Z$ --- after at most
+      $\beta$ odd steps, and remains there forever.
+\item[(ii)] \textup{(Repulsion.)} If $\alpha = 0$ then $\Phi$ is
+      \emph{exactly} conserved: $\Phi(\Tab(n)) = \Phi(n)$ for every
+      $n \geq 1$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Halving does not change $\vp$ (Lemma~\ref{lem:val}), hence does not change
+$\Phi$; so only odd steps matter. Let $n$ be odd with $\vp(n) = k$.
+
+(i) Let $\alpha \geq 1$. By Lemma~\ref{lem:val},
+$\vp(an+b) \geq \min(\alpha + k, \beta) \geq \min(k+1, \beta)$, so
+\[
+  \Phi(\Tab(n)) \;\geq\; \min\bigl(\min(k+1,\beta),\,\beta\bigr)
+  \;=\; \min(k+1, \beta) .
+\]
+If $\Phi(n) = \min(k,\beta) < \beta$ then $k < \beta$, so
+$\min(k+1,\beta) > k = \Phi(n)$ and $\Phi$ strictly increases; otherwise
+$\Phi(n) = \beta$ and $\Phi(\Tab(n)) \geq \min(k+1,\beta) = \beta$, so $\Phi$
+stays at $\beta$. Since $\Phi$ takes values in $\{0,1,\dots,\beta\}$ and every
+orbit meets odd numbers infinitely often (Lemma~\ref{lem:reachodd}), the value
+$\beta$ is reached within $\beta$ odd steps and never left.
+
+(ii) Let $\alpha = 0$, so $\vp(an) = k$. If $k < \beta$ then
+$k \neq \beta$, so Lemma~\ref{lem:val} gives $\vp(an+b) = k$ exactly, whence
+$\Phi(\Tab(n)) = k = \Phi(n)$. If $k \geq \beta$ then
+$\vp(an+b) \geq \min(k,\beta) = \beta$, so $\Phi(\Tab(n)) = \beta = \Phi(n)$.
+\end{proof}
+
+\begin{corollary}[Connected versus disconnected]\label{cor:conn}
+Let $p$ be an odd prime dividing $b$, and let $\beta = \vp(b) \geq 1$.
+\begin{itemize}\itemsep2pt
+\item If $p \mid a$, the set $p^{\beta}\Z \cap \Np$ is a global attractor:
+      every orbit enters it and stays. On it, $\Tab$ is a copy of
+      $T_{a,\,b/p^{\beta}}$ by Proposition~\ref{prop:scale}. The functional
+      graph is that copy with a forest of transients attached.
+\item If $p \nmid a$, then $\Np$ splits into the $\beta+1$ pairwise
+      unreachable invariant sets $\Phi^{-1}(0), \dots, \Phi^{-1}(\beta)$. The
+      functional graph has at least $\beta+1$ connected components.
+\end{itemize}
+\end{corollary}
+
+\begin{proof}
+The first case is Theorem~\ref{thm:strat}(i), which puts every orbit into
+$p^{\beta}\Z$, together with Proposition~\ref{prop:scale} to identify the
+dynamics there. The second is Theorem~\ref{thm:strat}(ii): $\Phi$ is constant
+along orbits, so its level sets are invariant and no orbit joins two of them;
+each is non-empty because $\Phi(p^{j}) = \min(j,\beta)$ realises every value.
+\end{proof}
+
+This is precisely Artem's connected/disconnected dichotomy~\cite{artem}, which
+he states for $a = 3$ in the form ``$b$ a multiple of $3$ attracts, otherwise
+it repels''. Theorem~\ref{thm:strat} shows the criterion is $p \mid a$ for
+each odd prime $p \mid b$ separately, and supplies the number of odd steps
+needed --- $\vp(b)$ --- which is Artem's observation that $3x+3$ takes one
+odd step and $3x+9$ takes two.
+
+\begin{remark}[``Factor loyalty'']
+carykh notes that in $5x+5$, once an orbit acquires a factor of $5$ it never
+loses it, and that this happens on the whole diagonal $a = b$ when $a$ is odd.
+That is Theorem~\ref{thm:strat}(i) with $\beta = 1$: for odd $a = b$, every
+odd prime $p \mid a$ divides both parameters, so $p\Z$ is entered after one
+odd step. He also notes correctly that the phenomenon fails on the even
+diagonal, e.g.\ $4x+4$; there $p = 2$ is the only common prime, and
+Lemma~\ref{lem:val} does not apply to it --- halving strips powers of two, so
+$\vtwo$ is not monotone. The even diagonal instead reduces by
+Proposition~\ref{prop:halve}.
+\end{remark}
+
+% =========================================================== normal form ====
+\section{Reduction and normal form}
+\label{sec:nf}
+
+\begin{definition}[Rewriting rules]\label{def:rules}
+On pairs $(a,b)$ with $a \geq 0$, $b \geq 1$ define
+\begin{align*}
+  \textbf{(H)} && (a,b) &\longrightarrow (a/2,\; b/2)
+     && \text{if } 2 \mid a \text{ and } 2 \mid b, \\
+  \textbf{(A)} && (a,b) &\longrightarrow (a,\; b/p^{\vp(b)})
+     && \text{if } p \text{ is an odd prime with } p \mid a \text{ and } p \mid b .
+\end{align*}
+\end{definition}
+
+\begin{theorem}[Normal form]\label{thm:nf}
+The rewriting system $\{\textbf{(H)}, \textbf{(A)}\}$ is terminating and
+confluent on $\{(a,b) : a \geq 0,\ b \geq 1\}$. Its normal forms are exactly
+the pairs with $\gcd(a,b) = 1$, so every universe has a unique normal form
+$\normalform(a,b)$, and
+\[
+  \normalform(a,b) \;=\; \Bigl(\frac{a}{2^{s}},\ \frac{b}{2^{s} D}\Bigr),
+  \qquad
+  s = \min(\vtwo(a), \vtwo(b)),
+  \quad
+  D = \prod_{\substack{p \mid a,\ p \neq 2}} p^{\vp(b)} .
+\]
+\end{theorem}
+
+\begin{proof}
+\emph{Termination.} Rule \textbf{(H)} decreases $\min(\vtwo(a),\vtwo(b))$ by
+one and leaves $\vp$ unchanged for every odd $p$; rule \textbf{(A)} removes
+one odd prime from $\gcd(a,b)$ --- after it, $\vp(b) = 0$ --- and changes no
+power of two, since $p^{\vp(b)}$ is odd. So the pair
+$\bigl(\min(\vtwo(a),\vtwo(b)),\ \#\{p \text{ odd prime} : p \mid \gcd(a,b)\}\bigr)$
+strictly decreases in the product order at every step, and both coordinates
+are non-negative integers.
+
+\emph{Local confluence.} Two applicable rules act on different primes, and
+each rule changes only the valuation at its own prime; so any two distinct
+applicable steps commute. With termination, Newman's lemma gives confluence
+and uniqueness of normal forms.
+
+\emph{Normal forms are the coprime pairs.} If $\gcd(a,b) > 1$ then some prime
+divides both, and either $p = 2$, enabling \textbf{(H)}, or $p$ is odd,
+enabling \textbf{(A)}; so a normal form is coprime. Conversely neither rule
+applies to a coprime pair. Finally, the displayed formula is the result of
+applying \textbf{(H)} exactly $s$ times and \textbf{(A)} once for each odd
+prime $p \mid a$ with $p \mid b$; the result is coprime, because for such a
+$p$ we get $\vp(b/(2^{s}D)) = \vp(b) - \vp(b) = 0$, and
+$\min(\vtwo(a/2^{s}), \vtwo(b/2^{s})) = 0$ by choice of $s$.
+\end{proof}
+
+\begin{theorem}[Reduction preserves the fate]\label{thm:redfate}
+Both rules preserve the fate of a universe, and act bijectively on cycles:
+\begin{itemize}\itemsep2pt
+\item Under \textbf{(H)}, cycles correspond as in
+      Proposition~\ref{prop:halve}\,(ii), with periods increased by the number
+      of odd terms.
+\item Under \textbf{(A)} with $D = p^{\vp(b)}$, the map $C \mapsto C/D$ is a
+      bijection $\Cyc(\Tab) \to \Cyc(T_{a,b/D})$ preserving periods.
+\end{itemize}
+Consequently $\Tab$ and $T_{\normalform(a,b)}$ have the same fate.
+\end{theorem}
+
+\begin{proof}
+The halving case is Proposition~\ref{prop:halve}. For \textbf{(A)}: by
+Theorem~\ref{thm:strat}(i) every orbit --- in particular every cycle --- lies
+eventually, hence entirely in the case of a cycle, inside $D\Z$. By
+Proposition~\ref{prop:scale}, $n \mapsto n/D$ carries $\Tab|_{D\Z}$
+isomorphically onto $T_{a,b/D}$, so it carries cycles to cycles bijectively
+and preserves periods. For fates: given $n \geq 1$, its $\Tab$-orbit has a
+tail inside $D\Z$, and dividing that tail by $D$ gives a $T_{a,b/D}$-orbit;
+the tail is eventually periodic (resp.\ unbounded) iff the whole orbit is, and
+iff its image is. Every $m \geq 1$ arises as such an image, namely from
+$n = Dm$, so the universal quantifiers match.
+\end{proof}
+
+\begin{example}
+$3x+9 \xrightarrow{\ \textbf{(A)},\,p=3\ } 3x+1$: the offset loses $3^{2}$ at
+once, and Theorem~\ref{thm:strat}(i) says the absorption into $9\Z$ takes two
+odd steps. $3x+15 \xrightarrow{\ \textbf{(A)},\,p=3\ } 3x+5$, since
+$v_{3}(15) = 1$; the prime $5$ is repelling and survives. $4x+4
+\xrightarrow{\textbf{(H)}} 2x+2 \xrightarrow{\textbf{(H)}} 1x+1$. All three
+are observations of~\cite{artem} and~\cite{carykh}, here derived.
+\end{example}
+
+\subsection{One-step absorption and the radical criterion}
+\label{sec:radical}
+
+Rule \textbf{(A)} says the offset is stripped one prime at a time, over
+$\vp(b)$ odd steps. There is a cruder condition under which the whole offset
+is stripped in a \emph{single} step, and it is worth isolating because it is
+the one that is easy to test.
+
+\begin{proposition}[One-step absorption]\label{prop:onestep}
+Let $a, b \geq 1$. Then $an + b \equiv 0 \pmod{b}$ for every $n$ if and only
+if $b \mid a$. In that case every orbit lies in $b\Z$ after a single odd step,
+and $\Tab$ restricted to $b\Z$ is a copy of $T_{a,1}$.
+\end{proposition}
+
+\begin{proof}
+$an + b \equiv an \pmod b$, so the condition is $an \equiv 0 \pmod b$ for all
+$n$, which at $n = 1$ gives $b \mid a$; conversely if $a = kb$ then
+$an + b = b(kn + 1)$. The last claim is Proposition~\ref{prop:scale} with
+$d = b$.
+\end{proof}
+
+\begin{theorem}[Radical criterion]\label{thm:radical}
+Let $a \geq 1$ and let $b \geq 1$ be odd. Then $\normalform(a,b) = (a,1)$ ---
+equivalently, $\Tab$ is, on a global attractor, a scaled copy of $T_{a,1}$ ---
+if and only if
+\[
+  \operatorname{rad}(b) \mid a,
+\]
+where $\operatorname{rad}(b) = \prod_{p \mid b} p$ is the radical of $b$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:nf}, $\normalform(a,b) = (a, b/D)$ with
+$D = \prod_{p \mid a,\, p \neq 2} p^{\vp(b)}$. Since $b$ is odd, every prime
+of $b$ is odd, so $b/D = 1$ iff $\vp(D) = \vp(b)$ for every $p \mid b$, iff
+every prime of $b$ divides $a$, iff $\operatorname{rad}(b) \mid a$.
+\end{proof}
+
+\begin{remark}
+The two conditions differ, and the difference is exactly the phenomenon that
+$3x+9$ exhibits. Proposition~\ref{prop:onestep} requires $b \mid a$, which
+fails for $(a,b) = (3,9)$; Theorem~\ref{thm:radical} requires only
+$\operatorname{rad}(9) = 3 \mid 3$, which holds. The absorption into $9\Z$
+takes two odd steps rather than one, but it happens, and $3x+9$ is a scaled
+copy of $3x+1$. The same applies to $3x+27$, $3x+81$, $5x+25$ and $9x+27$.
+So $b \mid a$ is sufficient but not necessary for equivalence; the radical is
+the right invariant.
+\end{remark}
+
+% ============================================================ solved =======
+\section{The solved families}
+\label{sec:solved}
+
+We now dispose of every universe that is not primitive. Throughout,
+$a, b \geq 0$.
+
+\begin{proposition}[$a = 0$: carykh's hub-and-spoke]\label{prop:const}
+Let $a = 0$.
+If $b = 0$, every orbit reaches the fixed point $0$.
+If $b \geq 1$, the universe is \textsc{cyclic} and has exactly one cycle,
+namely $b \to b/2 \to \cdots \to \oddpart(b) \to b$, of period
+$\vtwo(b) + 1$; every orbit enters it.
+\end{proposition}
+
+\begin{proof}
+For $b = 0$ every odd number maps to $0$ and every even number halves toward
+$0$. For $b \geq 1$: every orbit reaches an odd number
+(Lemma~\ref{lem:reachodd}), which maps to $b$; from $b$ the orbit halves to
+$\oddpart(b)$ in $\vtwo(b)$ steps and returns to $b$. Any cycle must contain
+an odd term, and every odd term maps to $b$, so every cycle contains $b$;
+hence there is exactly one.
+\end{proof}
+
+\begin{proposition}[$b = 0$: carykh's shapes]\label{prop:shape}
+Let $b = 0$ and $a \geq 1$, and write $a = 2^{t}u$ with $u$ odd. If $u = 1$
+the universe is \textsc{cyclic}: every odd $n$ lies on the cycle
+$n \to 2^{t}n \to \cdots \to n$ of period $t+1 = \log_{2}(a)+1$, and there are
+infinitely many cycles. If $u \geq 3$ the universe is \textsc{divergent}.
+\end{proposition}
+
+\begin{proof}
+For odd $n$, $T(n) = 2^{t}un$ and the next $t$ steps halve it to $un$. So on
+odd numbers the induced map is $n \mapsto un$. If $u = 1$ this is the identity
+and the displayed cycle is immediate; the period is $t+1$ because one odd step
+is followed by exactly $t$ halvings. If $u \geq 3$ the odd terms form the
+strictly increasing sequence $n, un, u^{2}n, \dots \to \infty$.
+\end{proof}
+
+Proposition~\ref{prop:shape} is carykh's ``all powers of two create clean-cut
+shapes with $\log_{2}(n)+1$ sides'', with the accompanying observation that
+$3x$ and $5x$ run away and that $6x$ runs away at the reduced rate of its odd
+part.
+
+\begin{theorem}[Parity obstruction: carykh's runaways]\label{thm:parity}
+Let $a \geq 1$ and $b \geq 1$ with $a + b$ odd. Then every orbit from $\Np$
+diverges; indeed every orbit is eventually a strictly increasing sequence of
+odd numbers. The growth is linear if $a = 1$ and exponential if $a \geq 2$.
+\end{theorem}
+
+\begin{proof}
+If $n$ is odd then $an+b$ is odd, because exactly one of $an$, $b$ is even.
+So once an orbit reaches an odd number --- which it does, by
+Lemma~\ref{lem:reachodd} --- it never again reaches an even one, and thereafter
+$n \mapsto an+b$ with $a \geq 1$, $b \geq 1$, which strictly increases. The
+growth rates are those of the recursion $n_{j+1} = an_{j}+b$.
+\end{proof}
+
+Theorem~\ref{thm:parity} explains the checkerboard of runaway cells that
+dominates carykh's grid, and his ``finite state machine'' picture: the
+$\text{odd} \to \text{even}$ transition simply does not exist. His four
+subtypes (linear, exponential, and their halving-images) are
+Theorem~\ref{thm:parity} together with Proposition~\ref{prop:halve}.
+
+\begin{theorem}[$a=1$: carykh's black holes]\label{thm:descent}
+Let $a = 1$ and let $b \geq 1$ be odd. Then:
+\begin{enumerate}\itemsep2pt
+\item[(i)] every $n > b$ strictly decreases within at most two steps;
+\item[(ii)] every orbit from $\Np$ is eventually periodic;
+\item[(iii)] every cycle has least element at most $b$, and is contained
+      entirely in $[1, 2b]$;
+\item[(iv)] $\{b, 2b\}$ is a cycle, and the bound $2b$ in (iii) is attained by
+      it, so (iii) is sharp;
+\item[(v)] over $\Z$: every orbit from $\Z_{\leq -1}$ enters $\Z_{\geq 0}$ in
+      finitely many steps, so \emph{every} orbit of $\Tab$ on $\Z$ is
+      eventually periodic.
+\end{enumerate}
+In particular the number of cycles is finite and effectively computable: it
+suffices to run the seeds $1, \dots, b$.
+\end{theorem}
+
+\begin{proof}
+(i) If $n$ is even then $T(n) = n/2 < n$. If $n$ is odd and $n > b$ then
+$n + b$ is even and $T^{2}(n) = (n+b)/2 < n$.
+
+(ii) By (i) the orbit strictly decreases until it enters the finite set
+$[1,b]$, so it must repeat.
+
+(iii) Let $C$ be a cycle and $m = \min C$. By (i), $m > b$ would make $m$
+strictly decrease, contradicting minimality; so $m \leq b$.
+
+For the upper bound, list the odd elements of $C$ in cyclic order as
+$y_{1} \to y_{2} \to \cdots \to y_{k} \to y_{1}$, where $y_{i+1}$ is reached
+from $y_{i}$ by one odd step followed by $d_{i} \geq 1$ halvings; the list is
+non-empty by Lemma~\ref{lem:reachodd}. Then
+\[
+  y_{i+1} \;=\; \frac{y_{i} + b}{2^{d_{i}}} \;\leq\; \frac{y_{i}+b}{2}.
+\]
+First, some $y_{i} \leq b$: otherwise $y_{i} > b$ for every $i$, and then
+$y_{i+1} \leq (y_{i}+b)/2 < y_{i}$ for every $i$, so the $y_{i}$ strictly
+decrease around a finite cycle, which is impossible. Second, if $y_{i} \leq b$
+then $y_{i+1} \leq (b+b)/2 = b$. By induction around the cycle, therefore,
+$y_{i} \leq b$ for \emph{all} $i$.
+
+Now every element of $C$ is either odd, hence $\leq b$, or even, hence of the
+form $(y_{i} + b)/2^{j}$ for some $i$ and some $0 \leq j < d_{i}$, hence at
+most $y_{i} + b \leq 2b$. Thus $C \subseteq [1, 2b]$.
+
+(iv) $T(b) = b + b = 2b$ and $T(2b) = b$, and this cycle contains $2b$.
+
+(v) Let $n \leq -1$. If $n$ is even, $|n|$ halves. If $n$ is odd, $T(n) =
+n + b > n$, and $|T(n)| < |n|$ whenever $n < -b$. So $|n|$ is strictly
+decreasing until the orbit reaches $[-b, -1]$, from which one odd step lands
+in $[0, b-1] \subseteq \Z_{\geq 0}$. Then (ii) applies. \textup{(}This is
+Proposition~\ref{prop:Zsplit}(iii) in concrete form: $b \leq a-1 = 0$ fails,
+so $\Z_{\leq -1}$ is not invariant.\textup{)}
+\end{proof}
+
+\begin{remark}
+Part (iii) is due to the present authors' earlier notes and is strictly
+stronger than the bound on $\min C$ alone: it confines the whole cycle, which
+is what makes the census in Table~\ref{tab:rowa1} \emph{exact} rather than a
+lower bound. A search over all odd $b \leq 159$ finds
+$\max(C)/b \leq 2$ with equality attained, confirming sharpness.
+\end{remark}
+
+\begin{remark}[The $a=1$ census is complete, and there are usually more than
+two cycles]\label{rem:a1}
+Theorem~\ref{thm:descent} makes this the one open-ended family whose cycle
+count is not merely a lower bound: since every cycle meets $[1,b]$, testing the
+seeds $1, \dots, b$ finds all of them. Table~\ref{tab:rowa1} is therefore
+exact.
+
+It also corrects a natural guess. The orbit of $1$ and the two-cycle
+$\{b,2b\}$ are always present, and for small $b$ they are all there is --- so
+one might expect exactly two cycles for every odd $b > 1$. That fails as soon
+as $b = 7$, which has three: $\{1,8,4,2\}$, $\{3,10,5,12,6\}$ and
+$\{7,14\}$. The count is $2$ for $b = 11,13,19,29,37,53,59,61$ but reaches
+$13$ at $b = 63$. At $b=1$ the two named cycles coincide, so the count is
+$1$.
+\end{remark}
+
+\begin{table}[!htbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rrr@{\hskip 1.6em}rrr@{\hskip 1.6em}rrr@{\hskip 1.6em}rrr@{}}
+\toprule
+$b$ & all & prim & $b$ & all & prim & $b$ & all & prim & $b$ & all & prim \\
+\midrule
+% >>>BEGIN-DATA row_a1
+1 & 1 & 1 & 21 & 6 & 2 & 41 & 3 & 2 & 61 & 2 & 1 \\
+3 & 2 & 1 & 23 & 3 & 2 & 43 & 4 & 3 & 63 & 13 & 6 \\
+5 & 2 & 1 & 25 & 3 & 1 & 45 & 8 & 2 & 65 & 7 & 4 \\
+7 & 3 & 2 & 27 & 4 & 1 & 47 & 3 & 2 & 67 & 2 & 1 \\
+9 & 3 & 1 & 29 & 2 & 1 & 49 & 5 & 2 & 69 & 6 & 2 \\
+11 & 2 & 1 & 31 & 7 & 6 & 51 & 8 & 4 & 71 & 3 & 2 \\
+13 & 2 & 1 & 33 & 5 & 2 & 53 & 2 & 1 & 73 & 9 & 8 \\
+15 & 5 & 2 & 35 & 6 & 2 & 55 & 5 & 2 & 75 & 8 & 2 \\
+17 & 3 & 2 & 37 & 2 & 1 & 57 & 5 & 2 & 77 & 6 & 2 \\
+19 & 2 & 1 & 39 & 5 & 2 & 59 & 2 & 1 & 79 & 3 & 2 \\
+% <<<END-DATA row_a1
+\bottomrule
+\end{tabular}
+\caption{Cycles of $x+b$ for odd $b \leq 79$, with the primitive count of
+Corollary~\ref{cor:cycdec}. Unlike every other census in this paper these
+counts are \emph{exact}, by Remark~\ref{rem:a1}.}
+\label{tab:rowa1}
+\end{table}
+
+Theorem~\ref{thm:descent} is the sharpening of carykh's remark that the
+$a=1$ row has ``crushing decreases while barely giving any chance to grow''.
+It is worth stating what it costs: the same two-step argument fails for
+$a = 3$ at exactly the point where $(3n+b)/2 < n$ would require $n < -b$. The
+$a = 1$ row is solved and the $a = 3$ row is not, and this is the whole of
+the difference.
+
+\subsection{The cycle through \texorpdfstring{$1$}{1}}
+\label{sec:one}
+
+A separate and very concrete question is when $1$ itself lies on a cycle. It
+has a complete answer, and the answer explains a family of universes that
+would otherwise look accidental.
+
+\begin{theorem}[Power-of-two criterion]\label{thm:one}
+Let $a \geq 1$ and $b \geq 1$. Then $1$ lies on a cycle of $\Tab$ if and only
+if the forward orbit of $1$ contains a power of $2$.
+\end{theorem}
+
+\begin{proof}
+($\Leftarrow$) If $T^{j}(1) = 2^{k}$ then $k$ further halvings give
+$T^{j+k}(1) = 1$, so $1$ is periodic.
+
+($\Rightarrow$) Suppose $1$ lies on a cycle $C$ and let $y \in C$ be its
+predecessor. If $y$ is even then $y = 2$, a power of $2$, and $y$ lies on the
+orbit. If $y$ is odd then $ay + b = 1$ with $y \geq 1$, forcing
+$a + b \leq ay + b = 1$, impossible for $a, b \geq 1$.
+\end{proof}
+
+\begin{corollary}[$a + b$ a power of two]\label{cor:onestep}
+If $a + b = 2^{k}$ then $1$ lies on a cycle of $\Tab$, of period exactly
+$k+1$, namely $1 \to 2^{k} \to 2^{k-1} \to \cdots \to 2 \to 1$.
+\end{corollary}
+
+\begin{proof}
+$T(1) = a + b = 2^{k}$, and the remaining $k$ steps are halvings.
+\end{proof}
+
+Corollary~\ref{cor:onestep} is the ``$a = 2^{k} - b$'' observation of the
+authors' earlier notes. Theorem~\ref{thm:one} shows it is the one-step case of
+a criterion that is both necessary and sufficient, and the gap is
+substantial: among the $147$ pairs with $a$ odd, $a < 200$, $b$ odd, $b < 60$
+for which $1$ lies on a cycle, exactly $93$ have $a+b$ a power of two, while
+the other $54$ reach a power of two only after a longer excursion. For
+instance in $3x+11$ the orbit of $1$ runs
+$1 \to 14 \to 7 \to 32 \to 16 \to 8 \to 4 \to 2 \to 1$, meeting $2^{5}$ at the
+fourth step although $3 + 11 = 14$ is not a power of two.
+
+\begin{remark}
+Corollary~\ref{cor:onestep} generalises verbatim to the $q$-ary map of
+Section~\ref{sec:qary}: if $a + b = q^{k}$ then $1$ lies on a cycle of period
+$k+1$. Theorem~\ref{thm:one} generalises too, with ``power of $2$'' replaced
+by ``power of $q$''.
+\end{remark}
+
+We can now state the classification.
+
+\begin{theorem}[Master classification]\label{thm:master}
+Let $a \geq 0$ and $b \geq 1$, and let $(a',b') = \normalform(a,b)$. Then
+$\Tab$ has the same fate as $T_{a',b'}$ \textup{(}Theorem~\ref{thm:redfate}\textup{)},
+and exactly one of the following holds.
+\begin{enumerate}\itemsep3pt
+\item[\textup{(1)}] $a' = 0$. The fate is \textsc{cyclic}, with a single cycle
+      of period $\vtwo(b')+1$ \textup{(}Proposition~\ref{prop:const}\textup{)}.
+\item[\textup{(2)}] $a' \geq 1$ and $a'+b'$ is odd. The fate is
+      \textsc{divergent} \textup{(}Theorem~\ref{thm:parity}\textup{)}.
+\item[\textup{(3)}] $a' = 1$ and $b'$ is odd. The fate is \textsc{cyclic},
+      with every cycle contained in $[1, 2b']$, so the cycle set is finite and
+      computable \textup{(}Theorem~\ref{thm:descent}\textup{)}.
+\item[\textup{(4)}] $a' \geq 3$ is odd, $b'$ is odd, and $\gcd(a',b')=1$. The
+      fate is \textsc{open}. We call such a universe \emph{primitive}.
+\end{enumerate}
+The case $b = 0$ is separate and is settled by
+Proposition~\ref{prop:shape}: the fate is \textsc{cyclic} if $a$ is a power of
+two \textup{(}including $a=1$\textup{)}, \textsc{divergent} otherwise, and
+$a = b = 0$ is terminal.
+\end{theorem}
+
+\begin{proof}
+Exhaustiveness. By Theorem~\ref{thm:nf}, $\gcd(a',b')=1$, so $a'$ and $b'$ are
+not both even. If $a' = 0$ we are in (1). Otherwise $a' \geq 1$; if
+$a'+b'$ is odd we are in (2). If $a'+b'$ is even and they are not both even,
+they are both odd; then $a' = 1$ gives (3) and $a' \geq 3$ gives (4).
+Mutual exclusivity is clear. The cited results supply the fates.
+\end{proof}
+
+\begin{remark}
+Nothing in Theorem~\ref{thm:master} is a probabilistic or heuristic statement:
+cases (1)--(3) are proved outright, and case (4) is a statement that a proof
+is not known, not a statement that the fate is mixed. What \emph{is}
+heuristic is which fate case (4) is expected to have; see
+Section~\ref{sec:open}.
+\end{remark}
+
+% =============================================================== table ======
+\section{The table of universes}
+\label{sec:table}
+
+Table~\ref{tab:grid} classifies every universe with $0 \leq a, b \leq 12$
+according to Theorem~\ref{thm:master}. The codes are
+\textbf{C} (constant, $a=0$), \textbf{S} (shape, $b=0$ with $a$ a power of
+two), \textbf{R} (runaway --- all orbits diverge), \textbf{H}
+(halving-reducible), \textbf{A} (attraction-reducible), \textbf{D}
+($a=1$ descent) and \textbf{?} (primitive and open).
+
+\begin{table}[!htbp]
+\centering
+% >>>BEGIN-DATA grid
+% generated by generate_data.py -- do not edit
+\begin{tabular}{@{}rccccccccccccc@{}}
+\toprule
+$a\backslash b$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 \\ \midrule
+$0$ & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} & \cell{gCon}{C} \\
+$1$ & \cell{gShp}{S} & \cell{gDes}{D} & \cell{gRun}{R} & \cell{gDes}{D} & \cell{gRun}{R} & \cell{gDes}{D} & \cell{gRun}{R} & \cell{gDes}{D} & \cell{gRun}{R} & \cell{gDes}{D} & \cell{gRun}{R} & \cell{gDes}{D} & \cell{gRun}{R} \\
+$2$ & \cell{gShp}{S} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+$3$ & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} \\
+$4$ & \cell{gShp}{S} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+$5$ & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} \\
+$6$ & \cell{gRun}{R} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+$7$ & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} \\
+$8$ & \cell{gShp}{S} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+$9$ & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} \\
+$10$ & \cell{gRun}{R} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+$11$ & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gOpen}{?} & \cell{gRun}{R} & \cell{gAtt}{A} & \cell{gRun}{R} \\
+$12$ & \cell{gRun}{R} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} & \cell{gRun}{R} & \cell{gHal}{H} \\
+\bottomrule
+\end{tabular}
+% <<<END-DATA grid
+\caption{The multiverse for $0 \leq a,b \leq 12$. Only the cells marked
+\textbf{?} are open, and only those; every other cell is settled by
+Theorem~\ref{thm:master}. The cells marked \textbf{H} and \textbf{A} are open
+or solved according to the fate of their normal form.}
+\label{tab:grid}
+\end{table}
+
+The visible regularities all have proofs above. The row $a=0$ and the column
+$b=0$ are Propositions~\ref{prop:const} and~\ref{prop:shape}. The
+checkerboard of \textbf{R} is Theorem~\ref{thm:parity}. The quarter-lattice of
+\textbf{H} at even $(a,b)$ is Proposition~\ref{prop:halve}. The \textbf{A}
+cells lie where an odd prime divides both coordinates --- so the diagonal
+$a = b$ with $a$ odd, and more generally the sublattices $p \mid a$, $p \mid b$.
+What is left is the odd--odd sublattice with $\gcd = 1$.
+
+\subsection{carykh's nine}
+
+carykh singles out nine cells of his $6 \times 6$ grid as having ``no obvious
+indicators'' --- these are exactly the cells with $a, b \in \{1,3,5\}$, i.e.\
+the odd--odd sublattice, which is the correct set to single out.
+Theorem~\ref{thm:master} resolves five of the nine.
+
+\begin{theorem}\label{thm:nine}
+Of carykh's nine universes, three are solved, two reduce, and four are open
+and pairwise affinely inequivalent:
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+universe & family & status \\
+\midrule
+% >>>BEGIN-DATA carykh_nine
+$1x+1$ & descent & \solved{every orbit cycles} \\
+$1x+3$ & descent & \solved{every orbit cycles} \\
+$1x+5$ & descent & \solved{every orbit cycles} \\
+$3x+1$ & primitive & \openv{open} \\
+$3x+3$ & attracting-reducible & \reduc{equivalent to $3x+1$} \\
+$3x+5$ & primitive & \openv{open} \\
+$5x+1$ & primitive & \openv{open} \\
+$5x+3$ & primitive & \openv{open} \\
+$5x+5$ & attracting-reducible & \reduc{equivalent to $5x+1$} \\
+% <<<END-DATA carykh_nine
+\bottomrule
+\end{tabular}
+\end{center}
+The four open universes are $3x+1$, $3x+5$, $5x+1$ and $5x+3$.
+\end{theorem}
+
+\begin{proof}
+$1x+1$, $1x+3$, $1x+5$ are Theorem~\ref{thm:descent}. $3x+3$ and $5x+5$ have
+$3 \mid \gcd(3,3)$ and $5 \mid \gcd(5,5)$, so rule \textbf{(A)} applies and
+Theorem~\ref{thm:redfate} identifies their fates with those of $3x+1$ and
+$5x+1$. The remaining four are primitive by inspection of $\gcd$, hence case
+(4) of Theorem~\ref{thm:master}. For pairwise inequivalence, suppose an affine
+$\varphi$ intertwines two of them. By Theorem~\ref{thm:rigid} it has
+$a' = a$ and $b' = \lambda b$ with $\lambda$ an odd integer, and if $\varphi$
+is a bijection of $\Z$ then $\lambda = \pm 1$. Different multipliers rule out
+every pair with $a = 3$ against $a = 5$; and within a row, $b' = \pm b$ fails
+for $(1,5)$ and for $(1,3)$. So no two of the four are affinely conjugate.
+\end{proof}
+
+\begin{remark}
+The four are inequivalent \emph{as members of this family under affine change
+of variable}, which is what Theorem~\ref{thm:rigid} controls. That is weaker
+than being non-isomorphic as abstract dynamical systems, and we do not claim
+the stronger statement: $n \mapsto 5n$ does embed $T_{3,1}$ into $T_{3,5}$
+(Proposition~\ref{prop:scale}), just not onto it.
+\end{remark}
+
+\begin{remark}
+$3x+3$ deserves a word, because carykh treats it as a distinct universe with
+its own character, noting that its graph has many extra branches that
+$3x+1$ lacks. Both observations are right and compatible:
+Theorem~\ref{thm:redfate} says the two have identical fates and
+period-preserving matching cycles, while Corollary~\ref{cor:conn} says the
+copy of $3x+1$ sits inside $3x+3$ as an attractor with a transient forest
+--- the branches --- hanging off it. Dynamically they are the same problem;
+as labelled graphs they are not isomorphic.
+\end{remark}
+
+\subsection{How much of the multiverse is open}
+
+\begin{theorem}[Densities]\label{thm:density}
+As $N \to \infty$,
+\begin{align*}
+  \frac{\#\{(a,b) \in [1,N]^{2} : \Tab \text{ open}\}}{N^{2}}
+    &\;\longrightarrow\; \frac{1}{3},
+  \\[1mm]
+  \frac{\#\{(a,b) \in [1,N]^{2} : \Tab \text{ open and primitive}\}}{N^{2}}
+    &\;\longrightarrow\; \frac{2}{\pi^{2}} .
+\end{align*}
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:master}, $\Tab$ is open iff its normal form is primitive,
+i.e.\ iff $a' \geq 3$ is odd. Rule \textbf{(A)} changes neither $a$ nor the
+parity of $b$, and rule \textbf{(H)} is applied exactly
+$s = \min(\vtwo(a),\vtwo(b))$ times, so $a' = a/2^{s}$ and
+$b' = b/(2^{s}D)$ with $D$ odd. Both $a'$ and $b'$ are odd exactly when
+$\vtwo(a) = \vtwo(b)$. Hence
+\[
+  \Tab \text{ open}
+  \iff \vtwo(a) = \vtwo(b) \ \text{ and } \ a/2^{\vtwo(a)} \geq 3 .
+\]
+The second condition fails only when $a$ is a power of two, a set of density
+zero. The natural density of $\{a : \vtwo(a) = s\}$ is $2^{-s-1}$, and the two
+coordinates are independent, so
+$\sum_{s \geq 0} 4^{-s-1} = \tfrac14 \cdot \tfrac{4}{3} = \tfrac13$.
+
+For the second limit: a universe is open and primitive iff $a \geq 3$ is odd,
+$b$ is odd and $\gcd(a,b)=1$. Conditioning on both being odd (density $1/4$),
+the density of coprimality among odd pairs is
+\[
+  \prod_{p \text{ odd prime}} \Bigl(1 - \frac{1}{p^{2}}\Bigr)
+  \;=\; \frac{\zeta(2)^{-1}}{1 - 2^{-2}}
+  \;=\; \frac{6/\pi^{2}}{3/4}
+  \;=\; \frac{8}{\pi^{2}},
+\]
+and removing the density-zero set of powers of two leaves
+$\tfrac14 \cdot \tfrac{8}{\pi^{2}} = 2/\pi^{2}$.
+\end{proof}
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+$N$ & open & open$/N^{2}$ & open primitive & primitive$/N^{2}$ \\
+\midrule
+% >>>BEGIN-DATA density
+$10$ & $26$ & $0.260000$ & $14$ & $0.140000$ \\
+$50$ & $794$ & $0.317600$ & $486$ & $0.194400$ \\
+$100$ & $3244$ & $0.324400$ & $1957$ & $0.195700$ \\
+$250$ & $20646$ & $0.330336$ & $12508$ & $0.200128$ \\
+$500$ & $82896$ & $0.331584$ & $50451$ & $0.201804$ \\
+$1000$ & $332396$ & $0.332396$ & $202161$ & $0.202161$ \\
+$2000$ & $1331396$ & $0.332849$ & $809865$ & $0.202466$ \\
+% <<<END-DATA density
+\bottomrule
+\end{tabular}
+\caption{Convergence to the constants of Theorem~\ref{thm:density}:
+$1/3 = 0.3333\ldots$ and $2/\pi^{2} = 0.202642\ldots$}
+\label{tab:density}
+\end{table}
+
+Table~\ref{tab:density} shows the convergence.
+So two thirds of the multiverse is settled outright, and of the remaining
+third, about $61\%$ ($= 3 \cdot 2/\pi^{2}$) is irreducibly new while the rest
+reduces to a smaller open universe. carykh's intuition that ``Collatz picked
+the only rule set that wasn't obvious in some way'' is a little too strong:
+the open region has positive density. What is true is that he picked the
+smallest interesting one --- $3x+1$ is the least primitive universe in the
+lexicographic order on $(a,b)$ with $a \geq 3$.
+
+\subsection{The knowledge ladder}
+\label{sec:ladder}
+
+Theorem~\ref{thm:master} sorts universes by \emph{how} they are settled.
+For deciding what is worth studying, a coarser grading is more useful, and it
+separates two things the family classification conflates. Consider $2x+2$ and
+$6x+2$: both are halving-reducible, so the classification of
+Section~\ref{sec:table} gives them the same label. But $2x+2$ reduces to
+$1x+1$, which is solved, while $6x+2$ reduces to $3x+1$ and is therefore
+exactly as open as the Collatz conjecture. Any presentation that colours the
+two alike is misleading.
+
+\begin{definition}[Knowledge tiers]\label{def:tiers}
+Write $(a',b') = \normalform(a,b)$. The universe $\Tab$ is
+\begin{itemize}\itemsep2pt
+\item \textsc{closed} if $T_{a',b'}$ has a proved fate and its complete cycle
+      set is given in closed form --- that is, $a' = 0$, or $b' = 0$, or
+      $a'+b'$ is odd;
+\item \textsc{decided} if $a' = 1$: the fate is proved and the cycle set is
+      finite and computable for each $b'$, but no formula in $b'$ is known;
+\item \textsc{reducible} if $T_{a',b'}$ is open and $(a,b) \neq (a',b')$;
+\item \textsc{open} if $T_{a',b'}$ is open and $(a,b) = (a',b')$.
+\end{itemize}
+\end{definition}
+
+\begin{proposition}\label{prop:tiers}
+The four tiers partition the family. \textsc{decided} is exactly the set of
+$(a,b)$ with $\vtwo(a) = \vtwo(b)$ and $a$ a power of two; \textsc{open} is
+exactly the set of primitive universes. Their natural densities are
+\[
+  \textsc{closed} \to \tfrac{2}{3}, \qquad
+  \textsc{decided} \to 0, \qquad
+  \textsc{reducible} \to \tfrac{1}{3} - \tfrac{2}{\pi^{2}}, \qquad
+  \textsc{open} \to \tfrac{2}{\pi^{2}} .
+\]
+\end{proposition}
+
+\begin{proof}
+The tiers are mutually exclusive and exhaustive by construction, since
+$T_{a',b'}$ is either open or proved, and in the proved case
+Theorem~\ref{thm:master} leaves exactly the four normal-form shapes listed.
+For \textsc{decided}: $a' = 1$ means $a/2^{s} = 1$ with
+$s = \min(\vtwo(a),\vtwo(b))$, i.e.\ $a = 2^{s}$, and $b'$ odd forces
+$\vtwo(b) = s$. The powers of two have density $0$, so the tier does.
+\textsc{open} is the primitive set, of density $2/\pi^{2}$ by
+Theorem~\ref{thm:density}; the open universes have density $1/3$, so
+\textsc{reducible} takes the difference; and the proved universes make up the
+remaining $2/3$, all but a density-zero part of which is \textsc{closed}.
+\end{proof}
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+$N$ & \textsc{closed} & \textsc{decided} & \textsc{reducible} & \textsc{open} \\
+\midrule
+% >>>BEGIN-DATA tiers
+$10$ & $0.640000$ & $0.100000$ & $0.120000$ & $0.140000$ \\
+$50$ & $0.662400$ & $0.020000$ & $0.123200$ & $0.194400$ \\
+$100$ & $0.665600$ & $0.010000$ & $0.128700$ & $0.195700$ \\
+$250$ & $0.665664$ & $0.004000$ & $0.130208$ & $0.200128$ \\
+$500$ & $0.666416$ & $0.002000$ & $0.129780$ & $0.201804$ \\
+$1000$ & $0.666604$ & $0.001000$ & $0.130235$ & $0.202161$ \\
+limit & $0.666667$ & $0.000000$ & $0.130691$ & $0.202642$ \\
+% <<<END-DATA tiers
+\bottomrule
+\end{tabular}
+\caption{Proportion of $(a,b) \in [1,N]^{2}$ in each tier of
+Definition~\ref{def:tiers}, against the limits of
+Proposition~\ref{prop:tiers}.}
+\label{tab:tiers}
+\end{table}
+
+Table~\ref{tab:tiers} confirms the four limits numerically.
+
+\begin{remark}
+The \textsc{decided} tier is not empty, which is worth saying because it is
+easy to assume that a proved fate comes with a known cycle structure. The
+$a=1$ row is a counterexample: Theorem~\ref{thm:descent} settles the fate in
+two lines, and Remark~\ref{rem:a1} shows the cycle counts
+$1, 2, 2, 3, 3, 2, 2, 5, 3, 2, 6, \dots$ follow no pattern we can see. It is
+also the only such row: every other proved family has its cycles in closed
+form.
+\end{remark}
+
+% ================================================================ cycles ====
+\section{Cycles}
+\label{sec:cycles}
+
+\subsection{The cycle equation}
+
+\begin{theorem}[Cycle equation]\label{thm:cyceq}
+Let $C$ be a cycle of $\Tab$ containing $k \geq 1$ odd terms
+$n_{1}, \dots, n_{k}$ in cyclic order, where $n_{i+1}$ is reached from
+$n_{i}$ by one odd step followed by $d_{i} \geq 1$ halvings, and let
+$m = d_{1}+\cdots+d_{k}$ be the total number of halvings. Then
+\[
+  n_{1}\bigl(2^{m} - a^{k}\bigr)
+  \;=\; b \sum_{i=1}^{k} a^{\,k-i}\, 2^{\,d_{1}+\cdots+d_{i-1}} .
+\]
+In particular $2^{m} > a^{k}$ for any cycle in $\Np$ with $b \geq 1$, so
+$m/k > \log_{2} a$.
+\end{theorem}
+
+\begin{proof}
+By construction $2^{d_{i}} n_{i+1} = a n_{i} + b$ for each $i$, indices modulo
+$k$. Multiply the $i$-th relation by $a^{k-i} 2^{d_{1}+\cdots+d_{i-1}}$ and
+sum over $i$; all terms $n_{2},\dots,n_{k}$ telescope away, leaving
+$2^{m}n_{1} = a^{k}n_{1} + b\sum_{i} a^{k-i}2^{d_{1}+\cdots+d_{i-1}}$.
+The right-hand sum is positive when $b \geq 1$, and $n_1 \geq 1$, so
+$2^{m} - a^{k} > 0$.
+\end{proof}
+
+The inequality $m/k > \log_{2}a$ is the exact form of carykh's remark that his
+two period-$8$ cycles in $3x+5$ have ``three rises and five falls, which
+corresponds to $3^{3} = 27$ being close to $2^{5} = 32$'', and that the
+period-$44$ cycles have $k=17$, $m=27$ with
+$3^{17} = 129{,}140{,}163$ close to $2^{27} = 134{,}217{,}728$. Our census
+confirms both $(k,m)$ pairs exactly. The mechanism is now visible: small
+cycle elements require $2^{m} - a^{k}$ to be large relative to the right-hand
+side, but $m/k$ must exceed $\log_{2}a$ only slightly for the sum to stay
+small --- so cycles cluster at convergents of the continued fraction of
+$\log_{2}a$. For $a=3$, $\log_{2}3 = 1.5849\ldots$ and $27/17 = 1.5882\ldots$
+
+\subsection{Strata and the divisor decomposition}
+
+\begin{theorem}[Stratification of the phase space]\label{thm:strata}
+Let $\gcd(a,b)=1$ with $a, b \geq 1$ odd. For $n \geq 1$ put
+\[
+  \pi(n) \;=\; \prod_{p \mid b} p^{\min(\vp(n),\,\vp(b))} ,
+\]
+a divisor of $b$. Then $\pi$ is constant along orbits, and
+\[
+  \Np \;=\; \bigsqcup_{d \mid b} \Sigma_{d},
+  \qquad \Sigma_{d} = \pi^{-1}(d),
+\]
+is a partition into $\tau(b)$ non-empty $\Tab$-invariant sets. Moreover
+$n \mapsto n/d$ is an isomorphism from $\Tab|_{\Sigma_{d}}$ onto
+$T_{a,b/d}|_{\Sigma_{1}}$, where $\Sigma_{1}$ is the corresponding
+\emph{primitive stratum} of $T_{a,b/d}$.
+\end{theorem}
+
+\begin{proof}
+Since $\gcd(a,b)=1$, every prime $p \mid b$ is odd and satisfies $p \nmid a$,
+so Theorem~\ref{thm:strat}(ii) applies to each: $\min(\vp(\cdot),\vp(b))$ is
+conserved. Hence so is $\pi$, and the fibres partition $\Np$ into invariant
+sets. The value set is all of $\{d : d \mid b\}$ because $\pi(d) = d$ for each
+divisor $d$ of $b$: indeed for $p \mid b$ we have
+$\min(\vp(d),\vp(b)) = \vp(d)$.
+
+Fix $d \mid b$ and $n \in \Sigma_{d}$. For each $p \mid b$, either
+$\vp(d) < \vp(b)$, in which case $\vp(n) = \vp(d)$ so $\vp(n/d) = 0$; or
+$\vp(d) = \vp(b)$, in which case $p \nmid b/d$. Either way
+$\pi_{b/d}(n/d) = 1$, so $n/d \in \Sigma_{1}$ for $T_{a,b/d}$; and the map is
+onto with inverse $m \mapsto dm$, which lands in $\Sigma_{d}$ by the same
+computation. Since $d$ is odd, Proposition~\ref{prop:scale} makes it a
+conjugacy.
+\end{proof}
+
+\begin{corollary}[Divisor decomposition of the cycle set]\label{cor:cycdec}
+Under the hypotheses of Theorem~\ref{thm:strata}, writing $\PCyc$ for the set
+of cycles lying in the primitive stratum,
+\[
+  \Cyc(\Tab) \;=\; \bigsqcup_{d \mid b} d \cdot \PCyc\bigl(T_{a,\,b/d}\bigr),
+\]
+and the bijections preserve periods and the pair $(k,m)$.
+\end{corollary}
+
+\begin{proof}
+Each cycle lies in a single stratum, and Theorem~\ref{thm:strata} identifies
+the $d$-th stratum with the primitive stratum of $T_{a,b/d}$ scaled by $d$.
+Conjugacies preserve periods, and they preserve parities --- $d$ is odd ---
+hence $k$ and $m$.
+\end{proof}
+
+Corollary~\ref{cor:cycdec} is the precise form of Artem's statement that ``a
+composite universe contains a parallel universe of every single one of its
+divisors''. Two things are added. First, the copies do not merely exist: they
+\emph{exhaust} the cycle set, so the count is an exact sum, not a lower bound.
+Second, the same holds for the whole phase space, not only the cycles
+(Theorem~\ref{thm:strata}).
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}llL@{}}
+\toprule
+universe & cycles & decomposition \\
+\midrule
+% >>>BEGIN-DATA decomposition
+$3x+5$ & $6$ & $1{\cdot}\mathrm{P}(3x+5)^{5} \;\sqcup\; 5{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+$3x+7$ & $2$ & $1{\cdot}\mathrm{P}(3x+7)^{1} \;\sqcup\; 7{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+$3x+25$ & $8$ & $1{\cdot}\mathrm{P}(3x+25)^{2} \;\sqcup\; 5{\cdot}\mathrm{P}(3x+5)^{5} \;\sqcup\; 25{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+$3x+35$ & $9$ & $1{\cdot}\mathrm{P}(3x+35)^{2} \;\sqcup\; 5{\cdot}\mathrm{P}(3x+7)^{1} \;\sqcup\; 7{\cdot}\mathrm{P}(3x+5)^{5} \;\sqcup\; 35{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+$3x+49$ & $3$ & $1{\cdot}\mathrm{P}(3x+49)^{1} \;\sqcup\; 7{\cdot}\mathrm{P}(3x+7)^{1} \;\sqcup\; 49{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+$3x+65$ & $16$ & $1{\cdot}\mathrm{P}(3x+65)^{1} \;\sqcup\; 5{\cdot}\mathrm{P}(3x+13)^{9} \;\sqcup\; 13{\cdot}\mathrm{P}(3x+5)^{5} \;\sqcup\; 65{\cdot}\mathrm{P}(3x+1)^{1}$ \\
+% <<<END-DATA decomposition
+\bottomrule
+\end{tabular}
+\caption{Corollary~\ref{cor:cycdec} in action;
+$\mathrm{P}(ax+b)^{j}$ denotes the $j$ primitive cycles of $ax+b$.
+Compare Artem's counts of $9$, $8$ and $3$ for $b = 35, 25, 49$.}
+\label{tab:decomp}
+\end{table}
+
+Table~\ref{tab:decomp} works the decomposition through for several offsets.
+
+\begin{example}[$b = 35$]
+$\Cyc(T_{3,35})$ has nine elements: two primitive, one equal to
+$5 \cdot \PCyc(T_{3,7})$, five equal to $7 \cdot \PCyc(T_{3,5})$, and one
+equal to $35 \cdot \PCyc(T_{3,1})$. Artem obtains the same nine by hand.
+\end{example}
+
+\begin{example}[$b = 65$]
+Artem observes that multiplying two offsets with unusually many cycles gives
+one with even more. Corollary~\ref{cor:cycdec} makes this exact: $5$ and $13$
+contribute $5$ and $9$ primitive cycles respectively, and
+$65 = 5 \cdot 13$ has $1 + 5 + 9 + 1 = 16$.
+\end{example}
+
+\subsection{Census}
+
+Table~\ref{tab:rowa3} gives cycle counts for the row $a = 3$. The search
+window is seeds $1 \leq n \leq 20{,}000$ with a step budget of $200{,}000$;
+this is a \emph{converged} window in the sense that every count is identical
+at $20{,}000$ and at $100{,}000$ seeds. Counts remain lower bounds in
+principle --- a cycle whose basin of attraction misses the seed window is
+invisible to any such search --- so they should be read as ``at least''.
+
+\begin{table}[!htbp]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rrr@{\hskip 1.6em}rrr@{\hskip 1.6em}rrr@{\hskip 1.6em}rrr@{}}
+\toprule
+$b$ & all & prim & $b$ & all & prim & $b$ & all & prim & $b$ & all & prim \\
+\midrule
+% >>>BEGIN-DATA row_a3
+1 & 1 & 1 & 27 & 1 & 1 & 53 & 2 & 1 & 79 & 5 & 4 \\
+3 & 1 & 1 & 29 & 5 & 4 & 55 & 11 & 3 & 81 & 1 & 1 \\
+5 & 6 & 5 & 31 & 2 & 1 & 57 & 2 & 1 & 83 & 4 & 3 \\
+7 & 2 & 1 & 33 & 3 & 2 & 59 & 8 & 7 & 85 & 9 & 1 \\
+9 & 1 & 1 & 35 & 9 & 2 & 61 & 3 & 2 & 87 & 5 & 4 \\
+11 & 3 & 2 & 37 & 4 & 3 & 63 & 2 & 1 & 89 & 2 & 1 \\
+13 & 10 & 9 & 39 & 10 & 9 & 65 & 16 & 1 & 91 & 14 & 3 \\
+15 & 6 & 5 & 41 & 2 & 1 & 67 & 2 & 1 & 93 & 2 & 1 \\
+17 & 3 & 2 & 43 & 2 & 1 & 69 & 4 & 3 & 95 & 10 & 3 \\
+19 & 2 & 1 & 45 & 6 & 5 & 71 & 8 & 7 & 97 & 3 & 2 \\
+21 & 2 & 1 & 47 & 8 & 7 & 73 & 4 & 3 & 99 & 3 & 2 \\
+23 & 4 & 3 & 49 & 3 & 1 & 75 & 8 & 2 &  &  &  \\
+25 & 8 & 2 & 51 & 3 & 2 & 77 & 5 & 1 &  &  & \\
+% <<<END-DATA row_a3
+\bottomrule
+\end{tabular}
+\caption{Cycles of $3x+b$ for odd $b \leq 99$: total count, and the count of
+\emph{primitive} cycles (those in the stratum $\Sigma_{1}$). By
+Corollary~\ref{cor:cycdec} the total is the sum of the primitive counts of
+$3x+(b/d)$ over the divisors $d \mid b$.}
+\label{tab:rowa3}
+\end{table}
+
+Three of Artem's observations about this row are confirmed, and one is
+explained.
+
+\begin{corollary}\label{cor:pow3}
+$3x+b$ has exactly one cycle whenever $b = 3^{j}$, and more generally
+$\#\Cyc(3x+3^{j}b_{0}) = \#\Cyc(3x+b_{0})$ for every $j \geq 0$ and every
+$b_{0}$ coprime to $3$.
+\end{corollary}
+
+\begin{proof}
+$3 \mid a$, so rule \textbf{(A)} strips $3^{v_{3}(b)}$ entirely and
+Theorem~\ref{thm:redfate} gives a period-preserving bijection of cycle sets.
+For $b = 3^{j}$ the normal form is $3x+1$, whose only known cycle is
+$\{1,4,2\}$.
+\end{proof}
+
+This is Artem's ``only the universes that are a power of three away from the
+original have one loop, and the same for any prime universe''. Note the
+statement is conditional on $3x+1$ having only one cycle, which is not known;
+what \emph{is} unconditional is the equality of counts.
+
+Artem also observes that no $b < 100$ yields exactly seven cycles. Our
+converged search confirms this: the multiset of counts for odd $b \leq 99$
+contains $1,2,3,4,5,6,8,9,10,11,14$ and $16$, but not $7$. We have no
+explanation, and we note it is sensitive to the search window --- at
+$3{,}000$ seeds $b=71$ appears to have seven, and only widening the window to
+$20{,}000$ reveals its eighth cycle.
+
+Table~\ref{tab:colb1} gives the complementary slice: the column $b=1$, where
+$\gcd(a,1)=1$ forces every universe to be primitive and irreducible.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}rrrl@{}}
+\toprule
+$a$ & cycles & drift $a/4$ & periods \\
+\midrule
+% >>>BEGIN-DATA col_b1
+$1$ & $1$ & $0.25$ & 2 \\
+$3$ & $1$ & $0.75$ & 3 \\
+$5$ & $3$ & $1.25$ & 7, 10, 10 \\
+$7$ & $1$ & $1.75$ & 4 \\
+$9$ & $0$ & $2.25$ & --- \\
+$11$ & $0$ & $2.75$ & --- \\
+$13$ & $0$ & $3.25$ & --- \\
+$15$ & $1$ & $3.75$ & 5 \\
+$17$ & $0$ & $4.25$ & --- \\
+$19$ & $0$ & $4.75$ & --- \\
+$21$ & $0$ & $5.25$ & --- \\
+$23$ & $0$ & $5.75$ & --- \\
+$25$ & $0$ & $6.25$ & --- \\
+$27$ & $0$ & $6.75$ & --- \\
+$29$ & $0$ & $7.25$ & --- \\
+$31$ & $1$ & $7.75$ & 6 \\
+$33$ & $0$ & $8.25$ & --- \\
+$35$ & $0$ & $8.75$ & --- \\
+$37$ & $0$ & $9.25$ & --- \\
+$39$ & $0$ & $9.75$ & --- \\
+% <<<END-DATA col_b1
+\bottomrule
+\end{tabular}
+\caption{Cycles of $ax+1$ for odd $a \leq 39$. Every entry with $a \geq 3$ is
+open. As the drift grows the cycles thin out and the seed window finds fewer
+of them.}
+\label{tab:colb1}
+\end{table}
+
+% =============================================================== open =======
+\section{The open region}
+\label{sec:open}
+
+Nothing in Section~\ref{sec:solved} distinguishes $3x+1$ from $5x+1$; both are
+case (4). The distinction is heuristic, and it is the one carykh draws when he
+calls the $a=3$ row ``Goldilocks'' and the $a=5$ row ``Icarus''.
+
+\begin{definition}[Drift]
+For a primitive universe define
+\[
+  \delta_{\mathrm{step}} = \frac{\sqrt{a}}{2},
+  \qquad
+  \delta_{\mathrm{odd}} = \frac{a}{4} .
+\]
+\end{definition}
+
+The first is the geometric mean of the two branch multipliers $a$ and $1/2$
+weighted equally --- carykh's ``gravity''. The second is the expected ratio
+between consecutive odd terms: an odd $n$ maps to $an+b \approx an$, which is
+divided by $2^{v}$ where $v = \vtwo(an+b)$ has expectation $2$ under the
+standard equidistribution heuristic. Both cross $1$ at $a = 4$, so:
+
+\begin{itemize}\itemsep2pt
+\item $a = 1$: $\delta_{\mathrm{odd}} = 1/4$. Strong contraction --- and here
+      the heuristic is a theorem (Theorem~\ref{thm:descent}).
+\item $a = 3$: $\delta_{\mathrm{odd}} = 3/4$. Weak contraction. Almost all
+      orbits are expected to be eventually periodic, and the number of cycles
+      is expected to be finite but is not known to be.
+\item $a \geq 5$: $\delta_{\mathrm{odd}} \geq 5/4$. Expansion. Almost all
+      orbits are expected to diverge, with finitely many cycles surviving as
+      exceptional sets.
+\end{itemize}
+
+These are heuristics with no proof in either direction, and the reader should
+treat the word ``expected'' strictly. What is worth recording is that the
+threshold $a < 4$ admits only $a \in \{1,3\}$ among odd multipliers, and
+$a=1$ is solved. \emph{The entire difficulty of the family is concentrated in
+the single row $a = 3$, plus the expanding rows where the difficulty is of
+the opposite kind.}
+
+\subsection{Empirical growth statistics}
+
+Table~\ref{tab:growth} reproduces carykh's ``average max growth'' heat map:
+the geometric mean over seeds $n \leq 5000$ of $\max(\mathrm{orbit}(n))/n$.
+
+\begin{table}[!htbp]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rccccccccc@{}}
+\toprule
+$a\backslash b$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+\midrule
+% >>>BEGIN-DATA growth
+$0$ & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+$1$ & 1.00 & 1.00 & \rn & 1.00 & \rn & 1.00 & \rn & 1.01 & \rn \\
+$2$ & 1.41 & \rn & 1.42 & \rn & \rn & \rn & 1.42 & \rn & \rn \\
+$3$ & \rn & 4.55 & \rn & 5.29 & \rn & 3.95 & \rn & 3.89 & \rn \\
+$4$ & 2.38 & \rn & \rn & \rn & 2.38 & \rn & \rn & \rn & \rn \\
+$5$ & \rn & 18.33 & \rn & 7.64 & \rn & 12.97 & \rn & 16.12 & \rn \\
+$6$ & \rn & \rn & 8.61 & \rn & \rn & \rn & 9.89 & \rn & \rn \\
+$7$ & \rn & 2.38 & \rn & 2.22 & \rn & 7.66 & \rn & 3.07 & \rn \\
+$8$ & 4.36 & \rn & \rn & \rn & \rn & \rn & \rn & \rn & 4.38 \\
+% <<<END-DATA growth
+\bottomrule
+\end{tabular}
+\caption{Geometric mean of $\max(\mathrm{orbit}(n))/n$ over $n \leq 5000$;
+\rn{} marks universes where every seed exceeded the value or step budget.}
+\label{tab:growth}
+\end{table}
+
+The \rn{} pattern is the checkerboard of Theorem~\ref{thm:parity} together
+with its halving images. The column $b=0$ is exactly computable, which pins
+down the corner of the table carykh reasons about.
+
+\begin{proposition}\label{prop:peak}
+Let $b = 0$ and $a = 2^{t}$ with $t \geq 0$. For $n \geq 1$ the relative peak
+is $\max(\mathrm{orbit}(n))/n = 2^{\max(\vtwo(n),\,t) - \vtwo(n)}$, and its
+geometric mean over $n$ --- weighting $\vtwo(n) = j$ by its natural density
+$2^{-j-1}$ --- is exactly
+\[
+  2^{\,t - 1 + 2^{-t}} .
+\]
+\end{proposition}
+
+\begin{proof}
+Write $n = 2^{j}m$ with $m$ odd. By Proposition~\ref{prop:shape} the orbit
+descends to $m$ and then cycles through $2^{t}m, 2^{t-1}m, \dots, m$, so its
+maximum is $\max(2^{j}, 2^{t})\,m$ and the relative peak is
+$2^{\max(j,t)-j}$. The natural density of $\{n : \vtwo(n) = j\}$ is
+$2^{-j-1}$, so the mean of $\log_{2}$ of the relative peak is
+\[
+  \sum_{j \geq 0} 2^{-j-1}\bigl(\max(j,t) - j\bigr)
+  = \sum_{j=0}^{t-1} (t-j)\,2^{-j-1}
+  = t - 1 + 2^{-t},
+\]
+the last equality by the standard evaluation of
+$\sum_{j \geq 0} j x^{j}$ at $x = 1/2$.
+\end{proof}
+
+For $t = 1, 2, 3$ this gives $1.414214$, $2.378414$, $4.362031$; the measured
+values over $n \leq 200{,}000$ agree to six decimal places. carykh reports
+$\sqrt{2}$ for the $a = 2$ row, which is the case $t = 1$; his argument ---
+that an odd $n$ peaks at $2n$ and an even $n$ does not grow at all --- is
+exactly the $j = 0$ term of the sum, and it is complete for $t=1$ because no
+other term contributes. It does not extend: for $t \geq 2$ an even seed with
+$\vtwo(n) < t$ \emph{does} grow, which is why the higher rows sit at
+$2^{\,t-1+2^{-t}}$ rather than the $2^{t/2}$ a naive reading would give.
+Away from $b = 0$ the $a = 2$ row is only approximately $\sqrt{2}$ ---
+Table~\ref{tab:growth} gives $1.414$, $1.417$, $1.421$ at $b = 0, 2, 6$ ---
+and carykh notes this drift himself.
+
+\begin{remark}[carykh's missing cell]
+carykh reports a single anomalous blank at $6x+34$ in his heat map and
+correctly diagnoses it: a seed in $3x+17$ peaks near $5.06 \times 10^{12}$, so
+its image in the parallel universe $6x+34$ peaks just above his
+$10^{13}$ cut-off and is misclassified as a runaway. This is an artefact of
+the threshold, not of the mathematics; by Proposition~\ref{prop:halve} the two
+cells must agree. It is a good illustration of why the tables here report
+their budgets explicitly.
+\end{remark}
+
+% ============================================================ software =====
+\section{Software}
+\label{sec:software}
+
+\paragraph{\texttt{Multiverse/multiverse.py}.}
+A dependency-free library implementing the theory above. Its entry points map
+one-to-one onto the results:
+
+\smallskip
+{\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+function & implements \\
+\midrule
+\texttt{classify} & Theorem~\ref{thm:master}: family, fate, drifts, reduction chain \\
+\texttt{normal\_form} & Theorem~\ref{thm:nf} \\
+\texttt{attracting\_primes} / \texttt{repelling\_primes}
+  & Theorem~\ref{thm:strat} \\
+\texttt{find\_cycles} & the memoised cycle census \\
+\texttt{decompose\_cycles} & Corollary~\ref{cor:cycdec} \\
+\texttt{cycle\_equation\_residual} & Theorem~\ref{thm:cyceq} \\
+\texttt{growth\_statistics} & Table~\ref{tab:growth}, Prop.~\ref{prop:peak} \\
+\bottomrule
+\end{tabular}}
+\smallskip
+
+\noindent A command-line interface exposes \texttt{report}, \texttt{grid} and
+\texttt{stats}.
+
+\begin{lstlisting}[style=py,numbers=none]
+$ python3 multiverse.py report 3 15
+family      : attracting-reducible
+fate        : open
+normal form : 3x+5
+   attraction  3x+15 -> 3x+5   (every orbit enters 3Z after at most 1 odd step)
+attracting  : 3^1
+repelling   : 5^1   (state space splits into mutually unreachable strata)
+\end{lstlisting}
+
+\paragraph{\texttt{Multiverse/qary.py}.}
+The $q$-ary maps of Section~\ref{sec:qmulti} and the predicate maps of
+Section~\ref{sec:beyond}: \texttt{QMap} with its two symmetries
+(\texttt{scaled}, \texttt{offset\_scaled}), \texttt{residue\_graph} and
+\texttt{escaping\_residues} for Theorem~\ref{thm:resobs},
+\texttt{qary\_drift} for Heuristic~\ref{heur:qdrift}, and
+\texttt{primality\_map} for the experiment of
+Proposition~\ref{prop:primmap}.
+
+\paragraph{\texttt{Multiverse/literature.py}.}
+Classifies the ccchallenge.org snapshot into the domains of
+Appendix~\ref{app:lit} and emits the appendix tables. Run with
+\texttt{-{}-refresh} it re-downloads the catalogue.
+
+\paragraph{\texttt{Multiverse/generate\_data.py} and \texttt{inline\_tables.py}.}
+The first regenerates every table into \texttt{Multiverse/data/} as plain text
+and LaTeX and runs the verification suite; the second splices those tables
+into this paper between marker comments. The paper is a single self-contained
+file with no \verb|\input| of external resources, so it compiles anywhere as a
+one-file upload, and no number in it is transcribed by hand.
+
+\paragraph{\texttt{Collatz Program/Collatz\_Program.py}.}
+The existing orbital analyser gains a \emph{Multiverse} workspace
+(\texttt{multiverse\_ui.py}, reached from the \textsf{Multiverse} button) with
+five panels: an interactive classification grid --- Table~\ref{tab:grid} made
+clickable, each cell opening its own report; a per-universe report showing
+family, fate, reduction chain and strata; a cycle census displaying the
+divisor decomposition and checking the cycle equation on every cycle it finds;
+a symmetry explorer that places the base and transformed trajectories side by
+side, marking the terms the halving symmetry inserts; and heat maps of
+relative peak, path length, cycle count and drift.
+
+% =========================================================== verification ===
+\section{Verification}
+\label{sec:verif}
+
+Every theorem above is accompanied by a numerical check.
+Table~\ref{tab:verif} reports them. These are checks, not proofs: they
+establish that the statements are not false on a large finite range, and they
+guard the implementation against the proofs drifting apart from the code.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.50\textwidth}rl@{}}
+\toprule
+check & claim & cases & result \\
+\midrule
+% >>>BEGIN-DATA verification
+\texttt{T-halve} & $T_{2a,2b}$ refines $T_{a,b}$: one extra even term after each odd step & $341941$ & \ok \\
+\texttt{T-scale} & $T_{a,db}(dn) = d\,T_{a,b}(n)$ for odd $d$ & $278400$ & \ok \\
+\texttt{T-attr} & $p \mid \gcd(a,b)$ forces every orbit into $p^{v_p(b)}\mathbb{Z}$ & $16059$ & \ok \\
+\texttt{T-rep} & $\min(v_p(n), v_p(b))$ is an orbit invariant when $p \mid b$, $p \nmid a$ & $73632$ & \ok \\
+\texttt{T-norm} & the normal form is coprime and idempotent & $39601$ & \ok \\
+\texttt{T-parity} & $a+b$ odd with $a,b \geq 1$: no orbit is ever periodic & $29640$ & \ok \\
+\texttt{T-desc} & $a=1$, $b$ odd: every orbit cycles, least cycle element $\leq b$ & $23940$ & \ok \\
+\texttt{T-const} & $a=0$: exactly one cycle, of period $v_2(b)+1$ & $199$ & \ok \\
+\texttt{T-shape} & $b=0$: every orbit cycles iff $a$ is a power of two, period $\log_2 a + 1$ & $39$ & \ok \\
+\texttt{T-cyceq} & cycle equation $n_1(2^m - a^k) = b\sum_i a^{k-i}2^{d_1+\cdots+d_{i-1}}$ & $301$ & \ok \\
+\texttt{T-decomp} & the $d$-graded part of $\mathrm{Cyc}(T_{a,b})$ is $d \cdot \mathrm{Cyc}^{\ast}(T_{a,b/d})$ & $33$ & \ok \\
+\texttt{T-attred} & the attracting reduction is a period-preserving bijection on cycles & $30$ & \ok \\
+\texttt{T-tier} & knowledge ladder: \textsc{open} $=$ minimal with an open normal form, \textsc{decided} $=$ the $a=1$ row, \textsc{closed} $=$ proved with closed-form cycles & $14400$ & \ok \\
+\texttt{T-Zhalf} & $\Z_{>0}$ invariant iff $a+b \geq 1$; $\Z_{<0}$ invariant iff $b \leq a-1$ & $3660$ & \ok \\
+\texttt{T-Zcross} & over $\Z$ the sign changes only at odd $n$ with $|n| \leq |b|/a$ & $1415200$ & \ok \\
+\texttt{T-one} & $1$ is periodic iff its orbit meets a power of two & $3481$ & \ok \\
+\texttt{T-onestep} & $a+b = 2^k$ gives a cycle through $1$ of period $k+1$ & $673$ & \ok \\
+\texttt{T-desc2b} & every cycle of $x+b$ lies in $[1, 2b]$ & $381$ & \ok \\
+\texttt{T-seedscale} & $n$ on a cycle of $ax+b$ $\Rightarrow$ $mn$ on one of $ax+mb$, for \emph{odd} $m$ & $104$ & \ok \\
+\texttt{T-noconj} & $cC$ is never a cycle of $T_{ca,cb}$ -- the refuted conjugacy & $104$ & \ok \\
+\texttt{T-radical} & $\mathrm{nf}(a,b) = (a,1)$ iff $\operatorname{rad}(b) \mid a$ & $7140$ & \ok \\
+\texttt{T-qscale} & $q$-ary scaling: $F_{q\mathbf a, q\mathbf b}$ refines $F_{\mathbf a,\mathbf b}$ & $80808$ & \ok \\
+\texttt{T-qtwist} & $q$-ary twisted scaling: $n \mapsto dn$ permutes the branches & $510900$ & \ok \\
+\texttt{T-resobs} & escaping residues never divide, and diverge under the growth condition & $92510$ & \ok \\
+\texttt{T-primmap} & primality map: every seed tested is eventually periodic, with exactly two cycles & $60000$ & \ok \\
+\texttt{T-neg} & $T_{a,-b}(n) = -T_{a,b}(-n)$ & $9251$ & \ok \\
+% <<<END-DATA verification
+\bottomrule
+\end{tabular}
+\caption{Numerical verification, run by \texttt{generate\_data.py}.}
+\label{tab:verif}
+\end{table}
+
+% ============================================================== q-ary ======
+\section{The \texorpdfstring{$q$}{q}-ary multiverse}
+\label{sec:qmulti}
+
+Everything so far concerns $q = 2$. This section asks which of it survives
+when the modulus is raised, and the answer is clean: \emph{the two symmetries
+survive verbatim, the parity obstruction survives in a stronger form, and the
+drift threshold survives with $4$ replaced by $q^{q}$}. What does not survive
+is rigidity, and with it the uniqueness of the normal form.
+
+Recall the map of Section~\ref{sec:qary}: fix $q \geq 2$ and integers
+$a_{1},\dots,a_{q-1}$, $b_{1},\dots,b_{q-1}$, and set
+\[
+  F(n) \;=\;
+  \begin{cases}
+    a_{i}n + b_{i} & n \equiv i \pmod q, \quad 1 \leq i \leq q-1,\\[1mm]
+    n/q            & n \equiv 0 \pmod q .
+  \end{cases}
+\]
+We write $F_{\mathbf a, \mathbf b}$ when the coefficients matter. This is the
+shape studied by Matthews and Watts~\cite{mw1984,mw1985} following Hasse, and
+by Venturini~\cite{venturini1992} under the name \emph{periodically linear}
+maps; their concern is the ergodic theory, ours the elementary reductions.
+
+\subsection{The two symmetries}
+
+\begin{proposition}[$q$-ary scaling]\label{prop:qscale}
+For every $n$,
+\[
+  n \not\equiv 0 \!\!\pmod q \;\Longrightarrow\;
+    F_{q\mathbf a,\, q\mathbf b}(n) = q \cdot F_{\mathbf a,\mathbf b}(n)
+    \ \text{and} \
+    F_{q\mathbf a,\, q\mathbf b}^{2}(n) = F_{\mathbf a,\mathbf b}(n),
+\]
+while $F_{q\mathbf a, q\mathbf b}(n) = F_{\mathbf a,\mathbf b}(n) = n/q$ for
+$n \equiv 0$. So $F_{q\mathbf a, q\mathbf b}$ traverses the same orbits as
+$F_{\mathbf a,\mathbf b}$ with one extra dividing step inserted after each
+affine step.
+\end{proposition}
+
+\begin{proof}
+For $n \equiv i \neq 0$ the value $q(a_{i}n+b_{i})$ is divisible by $q$, so
+the next step divides it back. The $n \equiv 0$ case is identical on both
+sides.
+\end{proof}
+
+\begin{proposition}[Twisted scaling]\label{prop:qtwist}
+Let $\gcd(d,q) = 1$ and let $\sigma(i) = di \bmod q$, a permutation of
+$(\Z/q)^{\times}$-orbits on $\{1,\dots,q-1\}$. Define
+$a'_{\sigma(i)} = a_{i}$ and $b'_{\sigma(i)} = d\, b_{i}$. Then for every $n$,
+\[
+  F_{\mathbf a', \mathbf b'}(dn) \;=\; d \cdot F_{\mathbf a, \mathbf b}(n).
+\]
+\end{proposition}
+
+\begin{proof}
+If $n \equiv 0 \pmod q$ then $dn \equiv 0$ and both sides are $dn/q$. If
+$n \equiv i \neq 0$ then $dn \equiv \sigma(i) \neq 0$, because $d$ is
+invertible mod $q$, and
+$F_{\mathbf a',\mathbf b'}(dn) = a'_{\sigma(i)}dn + b'_{\sigma(i)}
+= d(a_{i}n + b_{i})$.
+\end{proof}
+
+For $q = 2$ the only choice is $d$ odd, $\sigma$ is the identity, and
+Proposition~\ref{prop:qtwist} is exactly Proposition~\ref{prop:scale}. For
+$q \geq 3$ something genuinely new appears: the scaling \emph{permutes the
+branches}, so a universe is equivalent to one with its coefficient vector
+rearranged. Rigidity (Theorem~\ref{thm:rigid}) therefore fails for
+$q \geq 3$: two different coefficient vectors can describe the same dynamics.
+
+\begin{proposition}[Attracting sublattice]\label{prop:qattract}
+Let $m \geq 2$ with $\gcd(m,q) = 1$, and suppose $m \mid a_{i}$ and
+$m \mid b_{i}$ for every $i$. Then $m\Z$ is invariant, every orbit enters it
+after its first affine step, and $F$ restricted to $m\Z$ is, via $n \mapsto
+n/m$, the map with coefficients $(a_{i}, b_{i}/m)$.
+\end{proposition}
+
+\begin{proof}
+If $m \mid n$ and $q \mid n$ then $m \mid n/q$ because $\gcd(m,q)=1$; and
+$a_{i}n + b_{i} \equiv 0 \pmod m$ for every $n$ by hypothesis, which also
+gives the absorption after one affine step. The conjugacy is
+Proposition~\ref{prop:qtwist} with $d = m$ and $\sigma$ the identity on the
+relevant classes.
+\end{proof}
+
+\subsection{The residue obstruction}
+
+For $q = 2$, ``$a+b$ odd'' says an odd number can never become even. The right
+generalisation is a finite directed graph.
+
+\begin{definition}\label{def:resgraph}
+The \emph{residue graph} of $F$ is the map
+$\tau : \{1,\dots,q-1\} \to \Z/q$, $\tau(i) = a_{i}i + b_{i} \bmod q$. Call
+$i$ \emph{escaping} if the forward $\tau$-orbit of $i$ never reaches $0$.
+\end{definition}
+
+The graph is well defined because $n \equiv i$ forces
+$a_{i}n + b_{i} \equiv a_{i}i + b_{i} \pmod q$. Note it captures only the
+affine branches: $n/q$ is \emph{not} determined by $n \bmod q$, since it
+depends on $n \bmod q^{2}$. That asymmetry is exactly why the obstruction is
+one-directional.
+
+\begin{theorem}[Residue obstruction]\label{thm:resobs}
+Let $i$ be escaping and let $n \equiv i \pmod q$. Then:
+\begin{enumerate}\itemsep2pt
+\item[(i)] the orbit of $n$ never meets the dividing branch;
+\item[(ii)] if in addition every residue $j$ on the forward $\tau$-orbit of
+      $i$ satisfies $a_{j} \geq 2$, or $a_{j} = 1$ and $b_{j} \geq 1$, then
+      the orbit of every $n \geq 1$ in the class of $i$ is strictly
+      increasing, hence divergent.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) By induction: the residue after one step is $\tau$ of the current one, and
+the $\tau$-orbit of $i$ avoids $0$ by hypothesis, so every term is in a
+non-zero class and the dividing branch is never selected.
+
+(ii) By (i) every step is affine, using the branch $j$ of the current residue.
+The stated condition is exactly $a_{j}n + b_{j} > n$ for all $n \geq 1$: for
+$a_{j} \geq 2$ it gives $a_{j}n + b_{j} \geq 2n > n$, and for $a_{j} = 1$ it
+gives $n + b_{j} > n$. So the orbit strictly increases at every step and is
+unbounded.
+\end{proof}
+
+\begin{corollary}
+For $q = 2$ the only affine residue is $i = 1$, $\tau(1) = a + b \bmod 2$, and
+$1$ is escaping iff $a+b$ is odd. Theorem~\ref{thm:resobs} is then
+Theorem~\ref{thm:parity}.
+\end{corollary}
+
+The two conditions in Theorem~\ref{thm:resobs} are both needed. Dropping the
+growth condition admits the identity branch $a_{j}=1$, $b_{j}=0$, whose orbits
+are fixed points rather than divergent, and admits $a_{j}=0$, whose branch is
+constant. A machine check over $q \leq 5$ and coefficients in
+$\{0,\dots,3\}$ found $239{,}530$ orbits from escaping residues, none of which
+ever divided, confirming (i); and $125{,}765$ orbits satisfying the growth
+condition, all strictly increasing, confirming (ii).
+
+\subsection{Drift}
+
+\begin{heuristic}\label{heur:qdrift}
+Suppose the residues equidistribute along orbits and that an affine step
+whose image is divisible by $q$ is followed by $q/(q-1)$ divisions on average.
+Then the geometric drift per affine step is
+\[
+  \delta \;=\;
+  \frac{\bigl(\prod_{i=1}^{q-1} a_{i}\bigr)^{1/(q-1)}}{q^{\,q/(q-1)}},
+\]
+so $F$ contracts on average precisely when
+\[
+  \prod_{i=1}^{q-1} a_{i} \;<\; q^{\,q}.
+\]
+\end{heuristic}
+
+For $q = 2$ this is $a < 4$, the threshold of Section~\ref{sec:open}, and it
+recovers $\delta = a/4$. For $q = 3$ the condition is $a_{1}a_{2} < 27$: the
+map with $a = (3,3)$ has $\delta \approx 0.577$ and should collapse, while
+$a = (5,7)$ has $\delta \approx 1.139$ and should escape. As at $q = 2$ this
+is a heuristic and nothing more; the equidistribution it assumes is not known
+for any single map.
+
+\begin{remark}
+The threshold $q^{q}$ grows so fast that the ``interesting'' region --- where
+the drift is near $1$ --- is a vanishing fraction of coefficient space as $q$
+grows, but it is never empty: taking $a_{i} \approx q^{q/(q-1)}$ for all $i$
+puts $\delta$ near $1$. The $q$-ary multiverse therefore has a Goldilocks
+region at every modulus, and $3x+1$ is merely its smallest member.
+\end{remark}
+
+% =========================================================== beyond mod ===
+\section{Beyond modularity}
+\label{sec:beyond}
+
+Modularity is doing an enormous amount of work in everything above. This
+section asks what happens without it. The answer is that essentially nothing
+survives, but the reason is interesting and it suggests a principle we state
+as a conjecture.
+
+\begin{definition}[Predicate map]\label{def:predmap}
+Let $P_{1},\dots,P_{k}$ be predicates on $\Z$ with $P_{k}$ always true, and
+let $f_{1},\dots,f_{k}$ be functions $\Z \to \Z$. The associated
+\emph{predicate map} sends $n$ to $f_{j}(n)$ for the least $j$ with
+$P_{j}(n)$.
+\end{definition}
+
+Every map $\Z \to \Z$ is a predicate map, so there is no classification
+theorem to be had; and by Conway~\cite{conway} even the affine, congruence-driven
+case is universal once enough branches are allowed. The question worth asking
+is therefore not ``what are the predicate maps like'' but \emph{which
+predicates preserve the theory}.
+
+\begin{proposition}[Congruence predicates change nothing]\label{prop:congpred}
+If every $P_{j}$ is a union of residue classes modulo some $M_{j}$, and every
+$f_{j}$ is affine, then the predicate map is a periodically linear map with
+modulus $M = \operatorname{lcm}(M_{1},\dots,M_{k})$, and if one branch is
+$n \mapsto n/q$ on the class $0 \bmod q$ with $q \mid M$ it is a $q$-ary map
+after refining the classes. All of Section~\ref{sec:qmulti} applies.
+\end{proposition}
+
+\begin{proof}
+Each $P_{j}$ is determined by $n \bmod M$, so the branch taken is a function
+of $n \bmod M$; grouping the classes gives the stated shape.
+\end{proof}
+
+So the theory covers exactly the \emph{eventually periodic} predicates. The
+moment a predicate is not a congruence condition --- primality,
+squarefreeness, being a perfect power, a digit condition in a base coprime to
+the branch moduli --- every tool above fails at once: the residue graph does
+not exist, Terras-style class refinement has nothing to refine, and the
+affine bookkeeping that gives the cycle equation has no periodic structure to
+lean on.
+
+\subsection{A worked example: the primality map}
+
+The programme that produced this paper experimented with
+\[
+  f(n) \;=\;
+  \begin{cases}
+    3n+1 & n \text{ prime},\\
+    n/2  & n \text{ even},\\
+    n+1  & \text{otherwise},
+  \end{cases}
+\]
+and observed that every orbit it tried was eventually periodic. We can say
+rather more.
+
+\begin{proposition}\label{prop:primmap}
+For the map above: every odd prime $p$ satisfies $f^{2}(p) = (3p+1)/2
+\approx 1.5\,p$, and every odd composite $m$ satisfies $f^{2}(m) = (m+1)/2
+\approx 0.5\,m$. Hence an orbit can diverge only if the proportion $r$ of
+\emph{prime} values among the odd numbers it visits satisfies
+\[
+  \Bigl(\tfrac32\Bigr)^{r}\Bigl(\tfrac12\Bigr)^{1-r} > 1,
+  \qquad\text{i.e.}\qquad
+  r \;>\; \frac{\ln 2}{\ln 3} \;=\; 0.63092\ldots
+\]
+\end{proposition}
+
+\begin{proof}
+An odd $n$ is sent to $3n+1$ or $n+1$, both even, and the next step halves.
+Taking logarithms of the product of the per-odd-step multipliers gives the
+stated condition.
+\end{proof}
+
+A search over all seeds $n \leq 200{,}000$ finds that \emph{every} orbit is
+eventually periodic, and that there are exactly two cycles:
+\begin{align*}
+  C_{1} &= \{2,4,5,7,8,10,11,13,16,17,20,22,26,34,40,52\},
+    &&\text{period } 16, &&86.9\% \text{ of seeds},\\
+  C_{2} &= \{31,41,47,62,71,81,82,94,107,124,142,161,162,214,322\},
+    &&\text{period } 15, &&13.1\% .
+\end{align*}
+
+The tempting argument --- ``primes have density $0$, so the growing branch is
+negligible'' --- is too quick, and measuring carelessly makes it look false.
+Counting prime values over whole orbits gives densities of $55$--$71\%$,
+alarmingly close to the threshold, because the two cycles are short and
+prime-rich and orbits spend most of their time inside them. Restricting to
+the transient part and to values above a floor gives the honest picture:
+
+\begin{center}\small
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+values above & odd values seen & prime & density \\
+\midrule
+$10^{3}$   & $3958$ & $1328$ & $33.6\%$ \\
+$10^{4}$   & $3500$ & $723$  & $20.7\%$ \\
+$10^{6}$   & $2481$ & $344$  & $13.9\%$ \\
+$10^{8}$   & $3177$ & $331$  & $10.4\%$ \\
+$10^{11}$  & $1270$ & $107$  & $8.4\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The density decays, but it sits consistently around $2$--$3$ times the
+$1/\ln n$ one would predict for random integers of that size ($3.6\%$ at
+$10^{12}$) --- the map's odd values are biased towards primes, because
+$(m+1)/2$ and $(3p+1)/2$ avoid small factors more often than a random integer
+does. The bias is real and worth noting; it is also nowhere near enough. At
+$10^{12}$ the observed $8.4\%$ must reach $63.1\%$ for divergence, and it is
+falling.
+
+\begin{conjecture}[Primality map]\label{conj:primmap}
+Every orbit of $f$ is eventually periodic, and the two cycles listed above are
+the only ones.
+\end{conjecture}
+
+\subsection{The density--drift principle}
+
+The computation above is an instance of something general, which we state as
+the organising conjecture of this section.
+
+\begin{conjecture}[Density--drift principle]\label{conj:density}
+Let $T$ be a predicate map whose branches are asymptotically multiplicative,
+$f_{j}(n) \sim c_{j}n$, and suppose that along orbits the branch $j$ is taken
+with asymptotic frequency $d_{j}$, $\sum_j d_{j} = 1$. Then almost every orbit
+is bounded if $\prod_{j} c_{j}^{\,d_{j}} < 1$ and almost every orbit diverges
+if $\prod_{j} c_{j}^{\,d_{j}} > 1$.
+\end{conjecture}
+
+For congruence predicates the frequencies $d_{j}$ are the densities of the
+classes and the principle specialises to Heuristic~\ref{heur:qdrift} and, at
+$q=2$, to the classical $a/4$. Its content in the non-modular case is the
+assertion that the branch frequencies along orbits exist at all --- which for
+the primality map is the statement that the orbit does not conspire to visit
+primes more often than a density argument allows, and which the table above
+supports without settling.
+
+\begin{conjecture}[Sparse growth]\label{conj:sparse}
+If the branches with $c_{j} > 1$ are selected by predicates whose density
+along orbits tends to $0$, and some branch with $c_{j} < 1$ is taken with
+frequency bounded below, then every orbit is bounded.
+\end{conjecture}
+
+Conjecture~\ref{conj:sparse} would give Conjecture~\ref{conj:primmap}
+immediately, since the primes have density $0$. We state it separately
+because it is the weakest statement we can see that does the job, and because
+it isolates the difficulty: it is a statement about the \emph{invariant
+measure} of the map, not about the density of primes in $\N$.
+
+\begin{conjecture}[Reduction boundary]\label{conj:boundary}
+A predicate map admits a nontrivial reduction theory --- symmetries of the
+kind in Section~\ref{sec:sym}, a normal form, and a finite obstruction graph
+--- if and only if its predicates are eventually periodic.
+\end{conjecture}
+
+The forward direction is Proposition~\ref{prop:congpred}. The converse is the
+substantial half, and Conway's universality~\cite{conway} together with the
+$\Pi^{0}_{2}$-completeness of Kurtz and Simon~\cite{kurtzsimon} is evidence
+for it: a family rich enough to encode arbitrary computation cannot admit a
+classification, and predicate maps are certainly that rich. What would make
+Conjecture~\ref{conj:boundary} a theorem is a precise definition of
+``reduction theory'', which we do not have.
+
+\begin{remark}
+This section is deliberately short. The point we want to record is
+structural: the reason $3x+1$ is attackable at all --- the reason there is a
+Terras argument, a cycle equation, a normal form --- is that its branch
+predicate is a congruence. Change that, and the problem does not become
+harder in degree; it changes kind, from number theory to computability.
+\end{remark}
+
+% ========================================================== conjectures ====
+\section{Conjectures, and which of them survive}
+\label{sec:conj}
+
+The programme that produced this paper accumulated a list of conjectures. It
+is worth publishing the list together with its casualties: three of them are
+false, and the counterexamples are small enough to check by hand.
+
+\begin{enumerate}\itemsep6pt
+
+\item[\textbf{C1}] \emph{(Generalised Crandall conjecture.)} For every
+      $b \geq 1$ and every odd $a > 3$, the map $\Tab$ has an orbit that
+      never reaches a cycle through $1$. \textbf{Open.} For $b = 1$ this is
+      Crandall's conjecture~\cite{crandall}, known for almost all $a$ by
+      Franco and Pomerance~\cite{fp} and for $a = 2^{k}-1$ by
+      Santos~\cite{santos}. By Theorem~\ref{thm:redfate} it suffices to
+      consider $(a,b)$ in normal form, and by Corollary~\ref{cor:cycdec} the
+      cycle structure for composite $b$ is determined by that of its divisors
+      --- so the conjecture really only concerns primitive universes.
+
+\item[\textbf{C2}] \emph{Every orbit of every map with $a < 3$ is bounded.}
+      \textbf{False as stated, and completely settled.} It fails for
+      $a = 2$, $b$ odd --- $2x+1$ sends $1 \to 3 \to 7 \to 15 \to \cdots$ ---
+      which is Theorem~\ref{thm:parity}. Restricted to the cases where it is
+      not refuted by parity it is a theorem:
+      $a = 0$ is Proposition~\ref{prop:const}, $a = 1$ with $b$ odd is
+      Theorem~\ref{thm:descent}, and $a = 2$ with $b$ even reduces to
+      $a = 1$ by Proposition~\ref{prop:halve}.
+
+\item[\textbf{C3}] \emph{The $q$-ary map of Section~\ref{sec:qary} is not
+      Turing-complete.} \textbf{False for the unrestricted family.}
+      Conway~\cite{conway} constructed universal generalized Collatz
+      functions, and Kurtz and Simon~\cite{kurtzsimon} showed the natural
+      reachability problem is $\Pi^{0}_{2}$-complete. We note honestly that
+      Conway's construction uses rational multipliers chosen so that the
+      image is an integer, which is more freedom than the shape in
+      Section~\ref{sec:qary} allows; whether that exact restricted shape is
+      universal we do not know, and we regard \textbf{C3} as open only in
+      that narrow reading.
+
+\item[\textbf{C4}] \emph{If $1$ lies on a cycle $C$ containing another odd
+      number, and no scaling relation applies, then no odd number outside $C$
+      enters $C$.} \textbf{False.} In $5x+1$ the cycle through $1$ is
+      $\{1,6,3,16,8,4,2\}$, which contains the odd number $3$; the offset
+      $b=1$ admits no scaling; and the odd number $15 \notin C$ enters it:
+      \[
+        15 \to 76 \to 38 \to 19 \to 96 \to 48 \to 24 \to 12 \to 6 \in C .
+      \]
+      A search over odd $a \leq 39$, odd $b \leq 39$ and odd seeds below
+      $600$ finds eight such violations, the smallest in the most-studied
+      universe of the whole family.
+
+\item[\textbf{C5}] \emph{$1$ lies on a cycle of every map $3x+b$.}
+      \textbf{False}, as the programme already recorded: in $3x+3$ the orbit
+      of $1$ is $1 \to 6 \to 3 \to 12 \to 6$, which cycles without returning
+      to $1$.
+
+\item[\textbf{C5$'$}] \emph{$1$ lies on a cycle of $3x+b$ whenever $b$ is not
+      a power of $3$.} \textbf{False.} The smallest counterexample is
+      $b = 7$: the orbit of $1$ is
+      $1 \to 10 \to 5 \to 22 \to 11 \to 40 \to 20 \to 10$, which enters the
+      cycle $\{10,5,22,11,40,20\}$ and never returns to $1$. Further
+      counterexamples are $b = 15, 19, 21, 23, 25, 31, 33, 35, 37, 39, 45,
+      \dots$ Theorem~\ref{thm:one} replaces the conjecture with an exact
+      criterion: $1$ lies on a cycle of $3x+b$ if and only if the orbit of
+      $1$ meets a power of two, and $3 + b = 2^{k}$
+      \textup{(}Corollary~\ref{cor:onestep}\textup{)} is the one-step case
+      that accounts for $93$ of the $147$ instances we found.
+
+\item[\textbf{Q1}] \emph{Does $3511x+1$ have an orbit avoiding $1$?} $3511$
+      is the second known Wieferich prime; Crandall's conjecture is known for
+      the first, $1093$~\cite{crandall}. \textbf{Open}, and outside the reach
+      of anything here: our reductions never change the multiplier
+      \textup{(}Theorem~\ref{thm:rigid}\textup{)}, so the row $a = 3511$ is
+      untouched by them.
+\end{enumerate}
+
+\begin{remark}
+The pattern in \textbf{C4} and \textbf{C5$'$} is worth naming. Both
+conjectures generalise from the universes where a scaling relation is doing
+the work, and both break exactly where it stops. This is the practical value
+of Theorem~\ref{thm:nf}: once a universe is in normal form, one knows that no
+further structure is hiding, and a pattern that persists there is a pattern
+about the universe rather than about its presentation.
+\end{remark}
+
+% ============================================================== limits =====
+\section{What is \emph{not} proved}
+\label{sec:limits}
+
+\begin{enumerate}\itemsep4pt
+\item \textbf{No primitive universe is resolved.} Theorem~\ref{thm:master}
+      case (4) is a statement of ignorance. Nothing here bears on whether
+      $3x+1$ has other cycles, whether any $3x+b$ orbit diverges, or whether
+      $5x+1$ has a divergent orbit. The reductions move problems around; they
+      do not solve any.
+
+\item \textbf{Cycle counts are lower bounds.} Every count in
+      Section~\ref{sec:cycles} comes from a search over a finite seed window
+      with a finite step budget. A cycle whose basin misses the window is not
+      found. We report the window with every table and we checked stability by
+      widening it, but stability under widening is not a proof of
+      completeness. Artem makes the same caveat; it is a real one, and
+      $b = 71$ in Table~\ref{tab:rowa3} is a concrete example of a count that
+      changes when the window grows.
+
+\item \textbf{The drifts are heuristics.} $\delta_{\mathrm{odd}} = a/4$ rests
+      on $\mathbb{E}[\vtwo(an+b)] = 2$, which assumes an equidistribution that
+      is not proved for any particular universe. It predicts nothing about
+      any individual orbit. Tao's result~\cite{tao} is the state of the art on
+      making such heuristics rigorous for $3x+1$, and it falls well short of
+      the conjecture.
+
+\item \textbf{Densities are natural densities.} Theorem~\ref{thm:density}
+      says nothing about any particular $(a,b)$, and in particular does not
+      say that a positive proportion of universes will remain open --- only
+      that a positive proportion is open \emph{now}.
+
+\item \textbf{The $q$-ary chapter is elementary.} Section~\ref{sec:qmulti}
+      proves only the two symmetries and the residue obstruction. It does not
+      construct a normal form for $q \geq 3$, and it cannot: rigidity fails
+      there, because twisted scaling permutes the branches
+      (Proposition~\ref{prop:qtwist}), so a universe has several equally
+      valid coefficient vectors. Building the analogue of
+      Theorem~\ref{thm:nf} modulo that permutation action is the obvious next
+      problem, and we have not solved it.
+
+\item \textbf{Section~\ref{sec:beyond} proves almost nothing.} Its content is
+      one proposition, one computation, and three conjectures. In particular
+      Conjecture~\ref{conj:density} is not even precisely stated --- ``the
+      branch frequency along orbits'' is not known to exist --- and
+      Conjecture~\ref{conj:boundary} awaits a definition of ``reduction
+      theory''. We include the chapter because the boundary it points at
+      seems to us the right one, not because we can defend it.
+
+\item \textbf{Only affine equivalences are classified.}
+      Theorem~\ref{thm:rigid} rules out affine intertwinings. It does not rule
+      out more exotic conjugacies, and it does not rule out that two rows are
+      related by an argument that is not a change of variable at all.
+
+\item \textbf{$b < 0$ is only transported, not studied.}
+      Proposition~\ref{prop:neg} reduces negative offsets to the negative
+      integers of a positive-offset universe, but we do not classify the
+      dynamics there; $3x-1$ has at least three cycles and is as open as
+      $3x+1$.
+\end{enumerate}
+
+% ============================================================= attribution ==
+\section{Attribution}
+\label{sec:attrib}
+
+The multiverse framing and a large fraction of the phenomena in this paper
+were found, experimentally and independently of the literature, by
+carykh~\cite{carykh,lazykh} and by Artem~\cite{artem}. This paper's
+contribution is to prove them, to unify them, and to draw the line between
+solved and open. Table~\ref{tab:attrib} attributes each result.
+
+\begin{table}[!htbp]
+\centering\footnotesize
+\begin{tabular}{@{}R{0.44\textwidth}R{0.14\textwidth}R{0.34\textwidth}@{}}
+\toprule
+observation & first stated & status here \\
+\midrule
+The multiverse framing; the $(a,b)$ grid & carykh~\cite{carykh}
+  & adopted \\
+Hub-and-spoke family, $a=0$ & carykh
+  & Prop.~\ref{prop:const}: proof, exact period $\vtwo(b)+1$, uniqueness \\
+Shape family $b=0$ with $\log_{2}(a)+1$ sides & carykh
+  & Prop.~\ref{prop:shape}: proof, and the $u \geq 3$ runaway \\
+Runaway checkerboard, $a+b$ odd; linear vs exponential subtypes & carykh
+  & Thm.~\ref{thm:parity}: proof \\
+Even parallel universes $(2a,2b) \sim (a,b)$ & carykh
+  & Prop.~\ref{prop:halve}: exact orbit refinement, period formula, cycle
+    bijection \\
+Odd parallel universes, offset scaled by odd $d$ & carykh
+  & Prop.~\ref{prop:scale}: proof \\
+Connected vs disconnected odd parallels & carykh (named), Artem (criterion)
+  & Thm.~\ref{thm:strat}, Cor.~\ref{cor:conn}: the criterion is $p \mid a$,
+    per odd prime, with absorption time $\vp(b)$ \\
+``Factor loyalty'' on the odd diagonal $a=b$ & carykh
+  & special case of Thm.~\ref{thm:strat}(i) \\
+$3x+9$ attracts in two odd steps; $3x+3^{j}$ in $j$ & Artem
+  & Thm.~\ref{thm:strat}(i) \\
+$3x+15$ is a copy of $3x+5$, not of $3x+1$ & Artem
+  & Thm.~\ref{thm:nf}, Thm.~\ref{thm:redfate} \\
+Composite offsets contain a copy of every divisor & Artem
+  & Thm.~\ref{thm:strata}, Cor.~\ref{cor:cycdec}: strengthened to an exact
+    partition of the phase space and of the cycle set \\
+Cycle counts for $3x+b$, $b < 100$ & Artem
+  & Table~\ref{tab:rowa3}: recomputed at a converged window \\
+Only powers of $3$ away from a base have one cycle & Artem
+  & Cor.~\ref{cor:pow3} \\
+No $b < 100$ gives exactly seven cycles & Artem
+  & confirmed at a wider window (\S\ref{sec:cycles}) \\
+Drift $\sqrt{a}/2$; Goldilocks / Icarus / black-hole rows & carykh
+  & \S\ref{sec:open}, with the equivalent form $a/4$ per odd step and the
+    threshold $a<4$ \\
+$(k,m) = (3,5)$ and $(17,27)$ in $3x+5$, from $3^{k} \approx 2^{m}$ & carykh
+  & Thm.~\ref{thm:cyceq} \\
+$5x+1$ and $5x+5$ share the fingerprint $7,10,10$ & carykh
+  & Prop.~\ref{prop:scale} + Thm.~\ref{thm:strat}(i) \\
+Average max growth heat map; $\sqrt{2}$ on the $a=2$ row & carykh
+  & Table~\ref{tab:growth} \\
+The $6x+34$ anomaly is a threshold artefact & carykh
+  & confirmed, \S\ref{sec:open} \\
+Nine ``unique'' universes in the $6\times6$ grid & carykh
+  & Thm.~\ref{thm:nine}: three solved, two reducible, four open \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\emph{From the authors' own earlier programme
+(research notes and the repository's \texttt{proofs.txt}):}} \\
+Hub-and-spoke ($a=0$), shapes ($b=0$), parity runaways, and the $a=1$ row
+  & the authors
+  & Props.~\ref{prop:const},~\ref{prop:shape}, Thms.~\ref{thm:parity},
+    \ref{thm:descent}: proofs, plus two corrections noted below \\
+$n$ seeds a cycle of $ax+b$ $\Rightarrow$ $mn$ seeds one of $ax+mb$
+  & the authors
+  & Prop.~\ref{prop:scale}; \textbf{needs $m$ odd} --- see below \\
+$a = 2^{k}-b$ gives a cycle through $1$
+  & the authors
+  & Cor.~\ref{cor:onestep}, and strengthened to an exact criterion in
+    Thm.~\ref{thm:one} \\
+Every cycle of $x+b$ lies in $[1,2b]$
+  & the authors
+  & Thm.~\ref{thm:descent}(iii); this is what makes Table~\ref{tab:rowa1}
+    exact \\
+$2ax+2b$ is equivalent to $ax+b$
+  & the authors, and carykh independently
+  & Prop.~\ref{prop:halve} \\
+$n$ in $ax+b$ corresponds to $n/b$ in $ax+1$; equivalence iff $b \mid a$
+  & the authors
+  & Prop.~\ref{prop:scale}, Prop.~\ref{prop:onestep}; the correct criterion
+    for equivalence is $\operatorname{rad}(b) \mid a$
+    (Thm.~\ref{thm:radical}) \\
+Post-composing the odd branch: $T_{g}(n) = g(T(n))$ for odd $n$
+  & the authors
+  & Prop.~\ref{prop:postcomp} \\
+$g$ conjugates $T$ to $T_{g}$ when $\vtwo$ is preserved
+  & the authors
+  & \textbf{refuted}, Prop.~\ref{prop:noconj} \\
+The conjecture list C1--C5$'$, Q1
+  & the authors
+  & \S\ref{sec:conj}: C2, C4 and C5$'$ refuted, C3 refuted in the
+    unrestricted reading \\
+\midrule
+The $q$-ary framing (mod $q$ rather than mod $2$), and the programme of
+pushing the theory beyond modularity & the authors
+  & \S\ref{sec:qmulti}, \S\ref{sec:beyond}; the $q$-ary shape itself is
+    Matthews--Watts~\cite{mw1984} \\
+The primality-driven map $3n+1$ / $n/2$ / $n+1$ & the authors
+  & Prop.~\ref{prop:primmap}, Conj.~\ref{conj:primmap}: the threshold
+    $\ln 2/\ln 3$ and the measured densities \\
+\midrule
+Rigidity of affine equivalences & ---
+  & Thm.~\ref{thm:rigid} \\
+Normal form; termination and confluence & ---
+  & Thm.~\ref{thm:nf}, Thm.~\ref{thm:redfate} \\
+Master classification & ---
+  & Thm.~\ref{thm:master} \\
+Densities $1/3$ and $2/\pi^{2}$ & ---
+  & Thm.~\ref{thm:density} \\
+$q$-ary scaling, twisted scaling, residue obstruction, threshold $q^{q}$ & ---
+  & Props.~\ref{prop:qscale},~\ref{prop:qtwist}, Thm.~\ref{thm:resobs},
+    Heur.~\ref{heur:qdrift} \\
+The density--drift principle and the reduction boundary & ---
+  & Conjs.~\ref{conj:density},~\ref{conj:sparse},~\ref{conj:boundary} \\
+$a=1$ solved with the bound $\min C \leq b$ & ---
+  & Thm.~\ref{thm:descent} \\
+\bottomrule
+\end{tabular}
+\caption{Attribution. Entries with ``---'' in the middle column are, to our
+knowledge, first stated here; we make no claim of priority against the
+research literature on generalised $3x+1$ maps, for which see
+Lagarias~\cite{lagarias,lagariasbook}.}
+\label{tab:attrib}
+\end{table}
+
+\begin{remark}[Corrections to the earlier notes]
+Five items needed amending, and all five are recorded above and in
+\S\ref{sec:conj}.
+\begin{enumerate}\itemsep2pt
+\item The $b=0$ cycle length is $\log_{2}(a)+1$, not $\log_{2}(a)+2$
+      (Proposition~\ref{prop:shape}); the discrepancy is the convention of
+      listing the starting term twice.
+\item The $a=1$ family was recorded as having ``two loops''. The two named
+      always exist, but there are frequently more, first at $b=7$
+      (Remark~\ref{rem:a1}).
+\item The cycle-seed scaling $n \mapsto mn$ requires $m$ \emph{odd}. For even
+      $m$ the image $mn$ is even and simply halves; a search over
+      $a \in \{3,5,7\}$, $b \leq 7$ found $140$ failures for even $m$ and none
+      for odd $m$.
+\item The claim that a $\vtwo$-preserving $g$ conjugates $T$ to $T_{g}$ is
+      false (Proposition~\ref{prop:noconj}); $0$ of $104$ test cases lift.
+\item Conjectures C2, C4 and C5$'$ are false, with counterexamples
+      $2x+1$, $5x+1$ and $3x+7$ respectively (\S\ref{sec:conj}).
+\end{enumerate}
+None of these affects the reductions or the classification.
+\end{remark}
+
+\begin{remark}
+Several of the results here are certainly known in some form to specialists.
+The cycle equation (Theorem~\ref{thm:cyceq}) is classical, appearing in
+Lagarias~\cite{lagarias} for $3x+1$. The scaling relation
+(Proposition~\ref{prop:scale}) is folklore. What we have not found stated
+anywhere is the combination: the normal form, the resulting master
+classification, and the two densities.
+\end{remark}
+
+% ============================================================ conclusion ====
+\section{Conclusion}
+
+The generalised Collatz multiverse is more structured than it looks and
+smaller than it looks. Two symmetries --- halving and odd scaling --- and one
+dichotomy --- whether an odd prime divides the multiplier or only the offset
+--- reduce every universe to a coprime normal form. Four of the five resulting
+cases are solved completely and elementarily. The fifth, $a \geq 3$ odd with
+$b$ odd and coprime, is open, has density $2/\pi^{2}$, and contains
+$3x+1$.
+
+Pushing outward sharpens rather than dilutes that picture. Raising the
+modulus keeps both symmetries and replaces the parity obstruction by a finite
+directed graph on $\Z/q$, but costs rigidity: scaling permutes the branches,
+so there is no normal form at $q \geq 3$ and we do not know what should
+replace it. Dropping modularity altogether costs everything. The reduction
+theory, the cycle equation and the Terras-style refinement all rest on the
+branch being selected by a congruence, and once it is not --- primality, say
+--- the family is rich enough to encode arbitrary computation, so no
+classification can exist. On that reading the boundary of the subject is not
+a difficulty of degree but a change of kind, and it runs exactly along
+periodicity of the branch predicate.
+
+The videos that prompted this paper end with carykh's speculation that Collatz
+chose $3x+1$ ``not because that one was particularly interesting, but because
+it was the only rule set that wasn't obvious in some way''. The correct
+version is narrower and, we think, more striking: the drift threshold
+$a < 4$ admits exactly two odd multipliers, one of which is solved by a
+two-line descent argument. $3x+1$ is not the only interesting universe, but
+it is the smallest member of the only row where the difficulty is of the
+Collatz kind.
+
+% ============================================================= AI note ======
+\section*{Note on the use of artificial intelligence}
+\label{sec:ai}
+
+The research programme, the earlier hand computations, and the existing
+software in the repository are the author's. The theorems and proofs in this
+paper, the library \texttt{multiverse.py}, the verification suite, the
+Multiverse workspace in \texttt{Collatz\_Program.py}, and the text of this
+paper were produced in collaboration with an artificial-intelligence system
+(Claude, Anthropic), at the author's direction.
+
+The proofs here are hand-checkable and short by design, and each is
+accompanied by an independent numerical check reported in
+Table~\ref{tab:verif}; the cycle censuses were cross-checked against the
+counts published by Artem~\cite{artem} and carykh~\cite{carykh,lazykh}, which
+agree in every case where the search windows overlap. Section~\ref{sec:limits}
+states explicitly what is not proved. Unlike the companion
+paper~\cite{sievepaper} in this repository, this development is \emph{not}
+machine-checked in a proof assistant; the reader should hold its theorems to
+the ordinary standard of a hand-written proof.
+
+% ============================================================= appendix =====
+\FloatBarrier
+\appendix
+\section{The ccchallenge corpus, classified}
+\label{app:lit}
+
+ccchallenge.org~\cite{ccc} is a collaborative project to formalise the
+Collatz literature in proof assistants; it maintains a catalogue with a public
+API. We took a snapshot of $375$ papers and classified them by keyword into
+the domains below, first match winning, so that each paper is counted once.
+The classification is produced by \texttt{Multiverse/literature.py} from the
+cached snapshot \texttt{data/ccchallenge\_papers.json}, and the ordering of
+the domain list is significant: generalised maps are tested first, because
+those are the papers this paper engages with.
+
+Table~\ref{tab:litdomains} gives the resulting counts.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+domain & papers \\
+\midrule
+% >>>BEGIN-DATA lit_domains
+generalised maps & 49 \\
+cycles and lower bounds & 32 \\
+stopping time and density & 15 \\
+computation and verification & 53 \\
+logic, automata, formalisation & 8 \\
+p-adic, ergodic, analytic & 13 \\
+surveys and bibliographies & 8 \\
+other $3x+1$ & 197 \\
+\midrule \textbf{total} & \textbf{375} \\ \\
+% <<<END-DATA lit_domains
+\bottomrule
+\end{tabular}
+\caption{The corpus by domain.}
+\label{tab:litdomains}
+\end{table}
+
+\paragraph{A caution.}
+The corpus is a catalogue, not a curated bibliography: it includes preprints
+and self-published items alongside refereed work. Two entries claim a complete
+proof of the conjecture in a venue with no evidence of refereeing
+(Halemane, 2025; Novgorodtsev, 2026); neither is formalised on ccchallenge,
+and we list them for completeness without endorsement. A third, Bruckman
+(2008), appeared in a refereed venue and its argument is generally regarded
+as flawed. Nothing in this paper depends on any of them. Readers wanting a
+curated entry point should use Lagarias' annotated
+bibliographies~\cite{lagbib1,lagbib2,lagbib3}.
+
+\subsection{The generalised-map class}
+
+These are the $49$ papers our classifier assigns to generalised maps --- the
+part of the corpus relevant to the multiverse. Those we engage with
+individually are cited in Section~\ref{sec:priorgen}.
+
+\begin{center}\footnotesize
+\begin{longtable}{@{}R{0.26\textwidth}R{0.68\textwidth}@{}}
+\toprule
+author (year) & title \\
+\midrule
+\endhead
+% >>>BEGIN-DATA lit_generalised
+\textit{Heppner} (1978) & Eine Bemerkung zum Hasse-Syracuse Algorithmus \\
+\textit{Steiner} (1981) & On the ``$Qx+1$'' Problem, $Q$ odd \\
+\textit{Steiner} (1981) & On the ``$Qx+1$'' Problem, $Q$ odd II \\
+\textit{Matthews  \& Watts} (1984) & A generalization of Hasse's generalization of the Syracuse algorithm \\
+\textit{Lagarias} (1985) & The $3x  +  1$ problem and its generalizations \\
+\textit{Matthews  \& Watts} (1985) & A Markov approach to the generalized Syracuse algorithm \\
+\textit{Leigh} (1986) & A Markov process underlying the generalized Syracuse algorithm \\
+\textit{Dolan et al.} (1987) & A generalization of Everett's result on the Collatz $3x  +  1$ problem \\
+\textit{Matthews  \& Leigh} (1987) & A generalization of the Syracuse algorithm to $F_q [x]$ \\
+\textit{Buttsworth  \& Matthews} (1990) & On some Markov matrices arising from the generalized Collatz mapping \\
+\textit{Franco} (1990) & Diophantine Approximation and the $qx  +  1$ Problem \\
+\textit{Zhang  \& Yu} (1990) & A generalization of Kakutani's conjecture \\
+\textit{Venturini} (1992) & Iterates of Number Theoretic Functions with Periodic Rational Coefficients (Generalization of the $3x + 1$ problem) \\
+\textit{Korec} (1992) & The $3x  +  1$ Problem, Generalized Pascal Triangles, and Cellular Automata \\
+\textit{Matthews} (1992) & Some Borel measures associated with the generalized Collatz mapping \\
+\textit{Wirsching} (1994) & A Markov chain underlying the backward Syracuse algorithm \\
+\textit{Mignosi} (1995) & On a Generalization of the $3x  +  1$ Problem \\
+\textit{Brocco} (1995) & A Note on Mignosi's Generalization of the $3x+1$ Problem \\
+\textit{Franco  \& Pomerance} (1995) & On a Conjecture of Crandall Concerning the $qx  +  1$ Problem \\
+\textit{Bernstein  \& Lagarias} (1996) & The $3x+1$ Conjugacy Map \\
+\textit{Venturini} (1997) & On a Generalization of the $3x + 1$ problem \\
+\textit{Belaga  \& Mignotte} (1999) & Embedding the $3x+1$ Conjecture in a $3x+d$ Context \\
+\textit{Garcia  \& Tal} (1999) & A note on the generalized $3n + 1$ problem \\
+\textit{Belaga  \& Mignotte} (2000) & Cyclic Structure of Dynamical Systems Associated with $3x+d$ Extensions of Collatz Problem \\
+\textit{Dumont  \& Reiter} (2001) & Visualizing Generalized 3x+1 Function Dynamics \\
+\textit{Ke  \& Wei} (2001) & Generalization Concerning the $3x+1$ Problem \\
+\textit{Zarnowski  \& E.} (2001) & Generalized inverses and the total stopping time of Collatz sequences \\
+\textit{Rouet  \& Feix} (2002) & A generalization of the Collatz problem. Building cycles and a stochastic approach \\
+\textit{Belaga} (2003) & Effective polynomial upper bounds to perigees and numbers of $(3x+d)$-cycles of a given oddlength \\
+\textit{Wang et al.} (2003) & The distribution of the fixed points on the real axis of a generalized $3x+1$ function and some related fractal images \\
+\textit{Michel  \& Pascal} (2004) & Small Turing machines and generalized busy beaver competition \\
+\textit{Ohira  \& Yamashita} (2004) & A Generalization of the Collatz problem \\
+\textit{Farkas} (2005) & Variants of the $3N+1$ problem and multiplicative semigroups \\
+\textit{Matthews  \& R.} (2005) & The generalized $3x+1$ mapping \\
+\textit{Belaga  \& Mignotte} (2006) & The Collatz problem and its generalizations: Experimental Data. Table 1. Primitive cycles of $3x+d$ mappings \\
+\textit{Belaga  \& Mignotte} (2006) & The Collatz problem and its generalizations: Experimental Data. Table 2. Factorization of Collatz numbers $2^l-3^k$ \\
+\textit{Simons} (2007) & A simple (inductive) proof for  the non-existence of $2$-cycles for the $3x+1$ problem \\
+\textit{Kurtz  \& Simon} (2007) & The undecidability of the generalized Collatz problem \\
+\textit{Wang  \& Yu} (2007) & Visualizing generalized $3x+1$ function dynamics based on fractal \\
+\textit{Snapp  \& Tracy} (2008) & The Collatz problem and Analogues \\
+\textit{Simons} (2008) & On the (non)-existence of $m$-cycles for generalized Syracuse sequences \\
+\textit{Hicks et al.} (2008) & A Polynomial Analogue of the $3N+1$ Problem? \\
+\textit{Wang et al.} (2008) & Dynamics of the generalized $3x+1$ function determined by its fractal images \\
+\textit{Muller  \& Helmut} (2009) & Uber Periodenlangen and die Vermutungen von Collatz und Crandall \\
+\textit{Capco} (2015) & Odd Collatz Sequence and Binary Representations \\
+\textit{Santos} (2020) & On the Collatz general problem qn+1 \\
+\textit{Yolcu et al.} (2021) & An automated approach to the Collatz conjecture. \\
+\textit{Siegel} (2024) & {p, q}-adic Analysis and the Collatz Conjecture \\
+\textit{Novgorodtsev} (2026) & Algebraic Proof of the Collatz Conjecture and Universal Classification of 2-Adic Dynamical Systems \\ \\
+% <<<END-DATA lit_generalised
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{The full snapshot}
+
+For completeness, the whole corpus, tagged by domain:
+\textbf{G} generalised maps,
+\textbf{C} cycles and lower bounds,
+\textbf{D} stopping time and density,
+\textbf{V} computation and verification,
+\textbf{L} logic, automata, formalisation,
+\textbf{P} $p$-adic, ergodic, analytic,
+\textbf{S} surveys,
+\textbf{--} other $3x+1$.
+
+\begin{center}\scriptsize
+\begin{longtable}{@{}R{0.02\textwidth}R{0.17\textwidth}R{0.05\textwidth}R{0.66\textwidth}@{}}
+\toprule
+ & author & year & title \\
+\midrule
+\endhead
+% >>>BEGIN-DATA lit_corpus
+- & Slakmon  \& Macot & 2006 & On the almost convergence of Syracuse sequences \\
+G & Novgorodtsev & 2026 & Algebraic Proof of the Collatz Conjecture and Universal Classifica ... \\
+D & Novgorodtsev & 2026 & Exact Synchronized Coalescence Clocks and Peak-Envelope Transfer f ... \\
+- & Kontorovich  \& Miller & 2005 & Benford's law, values of $L$-functions, and the $3x+1$ problem \\
+- & Kontorovich  \& Sinai & 2002 & Structure Theorem for $(d, g, h)$-maps \\
+V & Stokes & 2021 & The search for self-contained numbers: k-special 3-smooth represen ... \\
+C & Amleh et al. & 1998 & On some difference equations with eventually periodic solutions \\
+- & Atkin & 1966 & Comment on Problem $63-13^*$ \\
+- & Baker  \& A. & 1966 & Linear forms in the logarithms of algebraic numbers \\
+- & Brent & 2002 & $3X+1$ dynamics on rationals with fixed denominator \\
+G & Snapp  \& Tracy & 2008 & The Collatz problem and Analogues \\
+C & Seifert & 1988 & On the arithmetic of cycles for the Collatz-Hasse (`Syracuse') con ... \\
+P & Kraft  \& Monks & 2010 & On conjugacies for the $3x+1$ map induced by continuous endomorphi ... \\
+- & Wiggin & 1988 & Wondrous Numbers -- Conjecture about the $3n  +  1$ family \\
+- & Hong & 1986 & About $3X+1$ problem \\
+V & Hayes & 1984 & Computer recreations: The ups and downs of hailstone numbers \\
+- & Thwaites & 1985 & My conjecture \\
+- & Thwaites & 1996 & Two Conjectures, or how to win $pounds$ 1000 \\
+C & Chisala & 1994 & Cycles in Collatz Sequences \\
+- & Everett & 1977 & Iteration of the number theoretic function $f(2n)=n, f(2n+1)=3n+2$ \\
+S & Ogilvy & 1972 & Tomorrow's Math: unsolved problems for the amateur \\
+- & Viola & 1983 & Un Problema di Aritmetica (A problem of arithmetic) \\
+- & Inclan & 2026 & Analysis of Collatz Trajectories via Modulo 6 Modular Families and ... \\
+- & Inclan & 2026 & Inverse Collatz map study, version 3 \\
+C & Farruggia et al. & 1996 & The elimination of a family of periodic parity vectors in the $3x+$ ... \\
+V & Cadogan & 1996 & Exploring the $3x+1$ problem I \\
+- & Ashbacher & 1992 & Further Investigations of the Wondrous Numbers \\
+- & Cadogan & 1984 & A note on the $3x +  1$ problem \\
+V & Cadogan & 1991 & Some observations on the $3x+1$ problem \\
+V & Cadogan & 2000 & The $3x+1$ problem: towards a solution \\
+V & Cadogan & 2003 & Trajectories in the $3x+1$ problem \\
+- & Cadogan & 2006 & A Solution to the $3x+1$ Problem \\
+- & Trigg et al. & 1976 & Comments on Problem 133 \\
+C & Hercher & 2023 & There are no Collatz $m$-Cycles with $m leq91$ \\
+- & Baiocchi & 1998 & 3N+1, UTM e Tag-Systems \\
+- & Pickover & 1989 & Hailstone $3n  +  1$ Number graphs \\
+C & Bohm  \& Sontacchi & 1978 & On the existence of cycles of given length in integer sequences li ... \\
+- & Levy & 2004 & Injectivity and Surjectivity of Collatz Functions \\
+- & Rawsthorne & 1985 & Imitation of an iteration \\
+P & Bernstein & 1994 & A Non-Iterative 2-adic Statement of the $3x +  1$ Conjecture \\
+G & Bernstein  \& Lagarias & 1996 & The $3x+1$ Conjugacy Map \\
+- & Shanks & 1965 & Comments on Problem $63-13^*$ \\
+- & Shanks & 1975 & Problem $\#5$ \\
+- & Merlini  \& Sala & 1999 & On the Fibonacci's Attractor and the Long Orbits in the $3n+1$ Pro ... \\
+D & Klarner & 1981 & An algorithm to determine when certain sets have $0$ density \\
+- & Klarner & 1982 & A sufficient condition for certain semigroups to be free \\
+- & Klarner & 1988 & $m$-recognizability of sets closed under certain affine functions \\
+- & Klarner  \& Post & 1992 & Some fascinating integer sequences \\
+- & Klarner  \& Rado & 1973 & Linear combinations of sets of consecutive integers \\
+- & Klarner  \& Rado & 1974 & Arithmetic properties of certain recursively defined sets \\
+D & Applegate  \& Lagarias & 1995 & Density Bounds for the $3x+1$ Problem I. Tree-Search Method \\
+D & Applegate  \& Lagarias & 1995 & Density Bounds for the $3x+1$ Problem II. Krasikov Inequalities \\
+V & Applegate  \& Lagarias & 1995 & The distribution of $3x+1$ trees \\
+D & Applegate  \& Lagarias & 2003 & Lower bounds for the total stopping time  of $3x+1$ iterates \\
+- & Applegate  \& Lagarias & 2006 & The $3x+1$ semigroup \\
+V & Barina & 2025 & Improved verification limit for the convergence of the Collatz con ... \\
+- & Gale & 1991 & Mathematical Entertainments: More Mysteries \\
+- & Gluck  \& Taylor & 2002 & A new statistic for the $3x+1$ problem \\
+V & Kay & 1972 & An Algorithm for Reducing the Size of an Integer \\
+- & Boyd & 1985 & Which rationals are ratios of Pisot sequences? \\
+- & Clark & 1995 & Second-Order Difference Equations Related to the Collatz $3n+1$ Co ... \\
+C & Clark & 2006 & Periodic solutions of arbitrary length in a simple integer iteration \\
+V & Clark  \& Lewis & 1995 & A Collatz-Type Difference Equation \\
+V & Clark  \& Lewis & 1998 & Symmetric solutions to a Collatz-like system of  Difference Equati ... \\
+- & Hoffman  \& Klarner & 1978 & Sets of integers closed under affine operators- the closure of fin ... \\
+- & Hoffman  \& Klarner & 1979 & Sets of integers closed under affine operators- the finite basis t ... \\
+- & Domenici & 2009 & A few observations on the Collatz problem \\
+- & Coppersmith & 1975 & The complement of certain recursively defined sets \\
+- & Shaw & 2006 & The pure numbers generated by the Collatz sequence \\
+- & Marcu & 1991 & The powers of two and three \\
+- & Belaga & 1998 & Reflecting on the $3x+1$ Mystery: Outline of a Scenario- Improbabl ... \\
+G & Belaga & 2003 & Effective polynomial upper bounds to perigees and numbers of $(3x+$ ... \\
+G & Belaga  \& Mignotte & 1999 & Embedding the $3x+1$ Conjecture in a $3x+d$ Context \\
+G & Belaga  \& Mignotte & 2000 & Cyclic Structure of Dynamical Systems Associated with $3x+d$ Exten ... \\
+V & Belaga  \& Mignotte & 2006 & Walking Cautiously into the Collatz Wilderness: Algorithmically, N ... \\
+G & Belaga  \& Mignotte & 2006 & The Collatz problem and its generalizations: Experimental Data. Ta ... \\
+G & Belaga  \& Mignotte & 2006 & The Collatz problem and its generalizations: Experimental Data. Ta ... \\
+L & Lehtonen & 2008 & Two undecidable versions of Collatz's problems \\
+- & Eliahou et al. & 2022 & Is the Syracuse Falling Time Bounded by 12? \\
+P & Jesus & 2026 & A Global Occupation Conjecture for the Accelerated 3x + 1 Map with ... \\
+- & Oliveri  \& Vella & 1998 & Alcune Questioni Correlate al Problema Del ``3D+1'' \\
+G & Yolcu et al. & 2021 & An automated approach to the Collatz conjecture. \\
+- & Barone & 1999 & A heuristic probabilistic argument for the Collatz sequence \\
+- & Roosendaal & 2004 & On the $3x+1$ problem \\
+G & Heppner & 1978 & Eine Bemerkung zum Hasse-Syracuse Algorithmus \\
+P & Akin & 2004 & Why is the $3x+1$ Problem Hard? \\
+G & Mignosi & 1995 & On a Generalization of the $3x  +  1$ Problem \\
+V & Kascak & 1992 & Small universal one-state linear operator algorithms \\
+- & Jarvis & 1989 & 13, 31 and the $3x  +  1$ problem \\
+V & Leavens  \& Vermeulen & 1992 & $3x +1$ Search Programs \\
+V & Gonnet & 1991 & Computations on the $3n+1$ Conjecture \\
+G & Leigh & 1986 & A Markov process underlying the generalized Syracuse algorithm \\
+- & Rhin & 1987 & Approximants de Pade et mesures effectives d'irrationalite \\
+- & Rhin  \& Toffin & 1986 & Approximants de Pade simultanes de logarithmes \\
+- & Venturini & 1982 & Sul Comportamento delle Iterazioni di Alcune Funzioni Numeriche \\
+- & Venturini & 1989 & On the $3x + 1$ Problem \\
+G & Venturini & 1992 & Iterates of Number Theoretic Functions with Periodic Rational Coef ... \\
+G & Venturini & 1997 & On a Generalization of the $3x + 1$ problem \\
+- & Hasenjager & 1990 & Hasse's Syracuse-Problem und die Rolle der Basen \\
+L & Scollo & 2005 & $omega$-rewriting the Collatz problem \\
+- & Gao & 1993 & On consecutive numbers of the same height in the Collatz problem \\
+- & Targonski & 1991 & Open questions about KW-orbits and iterative roots \\
+- & Wirsching & 1993 & An Improved Estimate Concerning $3N  +  1$ Predecessor Sets \\
+G & Wirsching & 1994 & A Markov chain underlying the backward Syracuse algorithm \\
+- & Wirsching & 1996 & On the Combinatorial Structure of $3N+1$ Predecessor Sets \\
+P & Wirsching & 1996 & $3n+1$ Predecessor Densities and Uniform Distribution in $mathbb$ ... \\
+P & Wirsching & 1998 & The Dynamical System Generated by the $3n + 1$ Function \\
+- & Wirsching & 1998 & Balls in Constrained Urns and Cantor-Like Sets \\
+- & Wirsching & 2000 & Uber das $3n + 1$ Problem \\
+V & Glaser  \& Weigand & 1989 & Das-ULAM Problem-Computergestutze Entdeckungen \\
+- & Riele & 1983 & Problem 669 \\
+- & Riele & 1983 & Iteration of Number-theoretic functions \\
+- & Coxeter & 1971 & Cyclic Sequences and Frieze Patterns, (The Fourth Felix Behrend Me ... \\
+- & He  \& Wang & 2003 & $3n+1$ problem's simplifying and structure property of $T(n)$ ... \\
+- & Lunkenheimer & 1988 & Eine kleine Untersuchung zu einem zahlentheoretischen Problem \\
+- & Muller & 1991 & Das `$3n+1$' Problem \\
+- & Muller & 1994 & Uber eine Klasse 2-adischer Funktionen im Zusammenhang mit dem `` ... \\
+S & Hasse & 1975 & Unsolved Problems in Elementary Number Theory \\
+V & Moller & 1978 & Uber Hasses Verallgemeinerung des Syracuse-Algorithmus (Kakutanis ... \\
+G & Farkas & 2005 & Variants of the $3N+1$ problem and multiplicative semigroups \\
+- & Huang et al. & 2000 & One-to-one correspondence between the natural numbers and the pari ... \\
+- & Krasikov & 1989 & How many numbers satisfy the $3x  +  1$ Conjecture? \\
+V & Krasikov  \& Lagarias & 2003 & Bounds for the $3x+1$ problem using difference inequalities \\
+- & Kerner & 2000 & Die Collatz-Ulam-Kombination CUK \\
+- & Korec  \& Znam & 1987 & A Note on the $3x  +  1$ Problem \\
+G & Korec & 1992 & The $3x  +  1$ Problem, Generalized Pascal Triangles, and Cellular ... \\
+D & Korec & 1994 & A Density Estimate for the $3x+1$ Problem \\
+V & Davison & 1977 & Some Comments on an Iteration Problem \\
+- & azewitz  \& Pettorossi & 1983 & Some properties of binary sequences useful for proving Collatz's c ... \\
+V & Arsac & 1986 & Algorithmes pour verifier la conjecture de Syracuse \\
+- & Roubaud & 1969 & Un probleme combinatoire pose par la poesie lyrique des troubadours \\
+- & Roubaud & 1993 & $N$-ine, autrement dit quenine (encore), Reflexions historiques et ... \\
+G & Dolan et al. & 1987 & A generalization of Everett's result on the Collatz $3x  +  1$ pro ... \\
+- & Kuttler & 1994 & On the $3x+1$ Problem \\
+L & Kari  \& Kopra & 2017 & Cellular automata and powers of p/q \\
+- & Bendegem & 2005 & The Collatz Conjecture: A Case Study in Mathematical Problem Solving \\
+- & Dumas & 2008 & Caracterisation des quenines et leur representation spirale \\
+- & Daudin & 2020 & $3n+1$ problem: an heuristic lower bound for the number of integer ... \\
+G & Rouet  \& Feix & 2002 & A generalization of the Collatz problem. Building cycles and a sto ... \\
+- & Allouche & 1979 & Sur la conjecture de ``Syracuse-Kakutani-Collatz'' \\
+C & Lagarias et al. & 1994 & Asymmetric Tent Map Expansions II. Purely Periodic Points \\
+V & Shallit  \& Wilson & 1991 & The ``$3x+1$'' Problem and Finite Automata \\
+G & Lagarias & 1985 & The $3x  +  1$ problem and its generalizations \\
+C & Lagarias & 1990 & The set of rational cycles for the $3x  +  1$ problem \\
+- & Lagarias & 1999 & How random are 3x + 1 function iterates? \\
+S & Lagarias & 2003 & The $3x+1$ Problem: An Annotated Bibliography (1963--1999) \\
+- & Lagarias & 2006 & Wild and Wooley Numbers \\
+S & Lagarias & 2010 & The Ultimate Challenge: The $3x+1$ Problem \\
+S & Lagarias & 2011 & The 3x+1 problem: An annotated bibliography (1963--1999) (sorted b ... \\
+S & Lagarias & 2012 & The 3x+1 Problem: An Annotated Bibliography, II (2000-2009) \\
+S & Lagarias & 2021 & The $3x+1$ Problem: An Overview \\
+- & Lagarias  \& Weiss & 1992 & The $3x  +  1$ Problem: Two Stochastic Models \\
+- & Lagarias  \& Soundararajan & 2006 & Benford's Law for the $3x+1$ Function \\
+V & Lagarias  \& Sloane & 2004 & Approximate squaring \\
+C & Lagarias et al. & 1993 & Asymmetric Tent Map Expansions I. Eventually Periodic Points \\
+G & Dumont  \& Reiter & 2001 & Visualizing Generalized 3x+1 Function Dynamics \\
+- & Dumont  \& Reiter & 2003 & Real dynamics of a $3$-power extension of the $3x+1$ function \\
+- & Goodwin & 2003 & Results on the Collatz conjecture \\
+V & Marcinkowski & 1999 & Achilles, Turtle, and Undecidable Boundedness Problems for Small D ... \\
+- & Joseph & 1998 & A chaotic extension of the Collatz function to $Z_2 [i]$ \\
+- & Conway & 1972 & Unpredicatable Iterations \\
+V & Conway & 1987 & FRACTRAN- A Simple Universal Computing Language for Arithmetic \\
+C & Simons & 2005 & On the non-existence of $2$-cycles for the $3x+1$ problem \\
+G & Simons & 2007 & A simple (inductive) proof for  the non-existence of $2$-cycles fo ... \\
+G & Simons & 2008 & On the (non)-existence of $m$-cycles for generalized Syracuse sequ ... \\
+C & Simons & 2008 & Exotic Collatz Cycles \\
+C & Simons & 2008 & Post-transcendence conditions for the existence of $m$-cycles for ... \\
+- & Simons & 2008 & On isomorphism between Farkas sequences and Collatz sequences \\
+- & Simons  \& Weger & 2004 & Mersenne en het Syracuseprobleem [Mersenne and the Syracuse problem] \\
+C & Simons  \& Weger & 2005 & Theoretical and computational bounds for $m$-cycles of the $3n+1$ ... \\
+G & Capco & 2015 & Odd Collatz Sequence and Binary Representations \\
+P & Lopez  \& Stoll & 2012 & The 2-Adic, Binary and Decimal Periods of 1/3k Approach Full Compl ... \\
+V & Pe & 2004 & The $3x+1$ Fractal \\
+- & Alves et al. & 2005 & A linear algebra approach to the conjecture of Collatz \\
+V & Nivergelt & 1975 & Computers and Mathematics Education \\
+- & Sander & 1990 & On the $(3N  +  1)$-conjecture \\
+L & Kari  \& Jarkko & 2012 & Cellular Automata, the Collatz Conjecture and Powers of 3/2 \\
+V & Metzger & 1995 & Untersuchungen zum $(3n+1)$-Algorithmus. Teil I: Das Problem der Z ... \\
+V & Metzger & 1999 & Zyklenbestimmung beim $(bn+1)$-Algorithmus \\
+G & Ke  \& Wei & 2001 & Generalization Concerning the $3x+1$ Problem \\
+- & Ke  \& Yong-Sheng & 2005 & The proof of the hypothesis about $"3x+1"$ \\
+G & Matthews & 1992 & Some Borel measures associated with the generalized Collatz mapping \\
+G & Matthews  \& Watts & 1984 & A generalization of Hasse's generalization of the Syracuse algorithm \\
+G & Matthews  \& Watts & 1985 & A Markov approach to the generalized Syracuse algorithm \\
+G & Matthews  \& Leigh & 1987 & A generalization of the Syracuse algorithm to $F_q [x]$ \\
+G & Hicks et al. & 2008 & A Polynomial Analogue of the $3N+1$ Problem? \\
+- & Stolarsky & 1998 & A prelude to the $3x+1$ problem \\
+C & Halemane & 2025-12-10 & Collatz-Conjecture Proved and Halemane-Conjecture Proposed \\
+C & Knight & 2026 & Collatz high cycles do not exist \\
+- & Knight & 2026 & A Small Collatz Rule without the Plus One \\
+- & Borovkov  \& Pfeifer & 2000 & Estimates for the Syracuse problem via a probabilistic model \\
+- & Mahler & 1968 & An unsolved problem on the powers of $3/2$ \\
+- & Michel et al. & 1995 & Formes lineaires en deux logarithmes et determinants d'interpolation \\
+V & Ratzan & 1973 & Some work on an Unsolved Palindromic Algorithm \\
+- & Flatto & 1992 & $Z$-numbers and $beta$-transformations \\
+- & Li  \& Chun & 2002 & Compressive Iteration for the $3N+1$ conjecture \\
+- & Li  \& Chun & 2003 & Contractible iteration for the $3n+1$ conjecture \\
+- & Li  \& Chun & 2004 & Same-flowing numbers and super contraction iteration in $3N+1$ con ... \\
+C & Li  \& Chun & 2005 & Necessary condition for periodic numbers in the $3N+1$ conjecture \\
+- & Li  \& Chun & 2006 & Some properties of super contraction iteration in the $3N+1$ conje ... \\
+V & Li et al. & 2002 & Research on the Syracuse Operator and its properties \\
+- & Li et al. & 2006 & Equivalence of the $3N+1$ and $3N+3k$ conjecture and some related ... \\
+C & Li et al. & 2004 & Study of periodic numbers in the $3N+1$ conjecture \\
+V & Mol & 2008 & Tag Systems and Collatz-like functions \\
+C & Halbeisen  \& Hungerbuhler & 1997 & Optimal bounds for the length of rational Collatz cycles \\
+- & Berg  \& Meinardus & 1994 & Functional equations connected with the Collatz problem \\
+- & Berg  \& Meinardus & 1995 & The 3n+1 Collatz Problem and Functional Equations \\
+- & Collatz & 1986 & On the Motivation and Origin of the $(3n +  1)$-Problem \\
+- & Kauffman & 1995 & Arithmetic in the form \\
+C & Luca  \& Florian & 2005 & On the nontrivial cycles in Collatz's problem \\
+V & Garner & 1981 & On the Collatz $3n+1$ algorithm \\
+V & Garner & 1985 & On heights in the Collatz $3n  +  1$ problem \\
+- & Lopez et al. & 2009 & The $3x+1$ conjugacy map over a Sturmian word \\
+C & Macindoe  \& James & 2026 & Reduced coordinates for the Collatz map: exact per-step laws, anch ... \\
+G & Garcia  \& Tal & 1999 & A note on the generalized $3n + 1$ problem \\
+P & Chamberland & 1996 & A Continuous Extension of the $3x+1$ Problem to the Real Line \\
+- & Feix et al. & 1995 & The $(3x +  1)/2$ Problem: A Statistical Approach \\
+- & Feix et al. & 1994 & Statistical Properties of an Iterated Arithmetic Mapping \\
+V & Margenstern  \& Maurice & 2000 & Frontier between decidability and undecidability: a survey \\
+- & Pierantoni  \& Curcic & 1996 & A transformation of iterated Collatz mappings \\
+- & Chamberland & 2003 & Una actualizachio del problema $3x+1$ \\
+- & Gardner & 1972 & Mathematical Games \\
+- & Yamada & 1980 & A convergence proof about an integral sequence \\
+V & Cook et al. & 2021 & Small Tile Sets That Compute While Solving Mazes \\
+G & Matthews  \& R. & 2005 & The generalized $3x+1$ mapping \\
+C & Sinisalo & 2003 & On the minimal cycle lengths of the Collatz sequences \\
+- & Margenstern  \& Matiyasevich & 1999 & A binomial representation of the $3X +1$ problem \\
+G & Siegel & 2024 & {p, q}-adic Analysis and the Collatz Conjecture \\
+V & Metzger  \& Heinz & 2000 & Untersuchungen zum $(3n+1)$-Algorithmus. Teil II: Die Konstruktion ... \\
+V & Metzger  \& Heinz & 2003 & Untersuchungen zum $(3n+1)$-Algorithmus, Teil III: Gesetzmassigkei ... \\
+- & Beeler et al. & 1972 & HAKMEM \\
+- & Fredman & 1972 & Growth properties of a class of recursively defined functions \\
+- & Fredman  \& Knuth & 1974 & Recurrence relations based on minimization \\
+- & Avidon & 1997 & On primitive $3$-smooth partitions of $n$ \\
+- & Williams & 2024 & Collatz conjecture: an order isomorphic recursive machine \\
+G & Michel  \& Pascal & 2004 & Small Turing machines and generalized busy beaver competition \\
+C & Mimuro  \& Tomoaki & 2001 & On certain simple cycles of the Collatz conjecture \\
+- & Misiurewicz et al. & 2005 & Real $3X+1$ \\
+- & Bringer & 1969 & Sur un probleme de R. Queneau \\
+V & Monks  \& G. & 2002 & $3X+1$ Minus the $+$ \\
+- & Monks et al. & 2004 & The Autoconjugacy of the $3x+1$ function \\
+C & Monks  \& M. & 2006 & The sufficiency of arithmetic progressions for the $3x+1$ conjecture \\
+P & Monks  \& Maria & 2009 & Endomorphisms of the shift dynamical systems, discrete derivatives ... \\
+- & Klamkin & 1963 & Problem $63-13^*$ \\
+V & Chacon  \& Vielhaber & 2004 & Structural and Computational Complexity of Isometries and their Sh ... \\
+G & Muller  \& Helmut & 2009 & Uber Periodenlangen and die Vermutungen von Collatz und Crandall \\
+P & Pippenger & 1993 & An elementary approach to some analytic asymptotics \\
+C & Rozier & 1990 & Demonstraton de l'absence de cycles d'une certain forme pour le pr ... \\
+C & Rozier & 1991 & Probleme de Syracuse: ``Majorations'' Elementaires des Cycles \\
+- & Rozier & 2017 & The 3x+1 problem: a lower bound hypothesis \\
+P & Rozier & 2018 & Parity Sequences of the $3x+1$ Map on the 2-adic Integers and Eucl ... \\
+C & Rozier & 2022 & Upper bound on the elements of a Collatz cycle \\
+- & Rozier  \& Terracol & 2025 & Paradoxical behavior in Collatz sequences \\
+- & Pan  \& Hong-liang & 2000 & Notes on the $3x+1$ problem \\
+V & Park  \& Jungwon & 2026 & A Machine-Verified Conditional Theory of the Collatz Conjecture. \\
+L & Michel & 1993 & Busy Beaver Competition and Collatz-like Problems \\
+L & Michel & 2014 & Simulation of the Collatz 3x+1 function by Turing machines \\
+D & Andaloro & 2000 & On total stopping times under $3X+1$ iteration \\
+- & Andaloro & 2002 & The $3X+1$ problem and directed graphs \\
+- & Erdos  \& Graham & 1979 & Old and new problems and results in combinatorial number theory: v ... \\
+- & Erdos  \& Graham & 1980 & Old and new problems and results in combinatorial number theory \\
+- & Bruckman & 2008 & A proof of the Collatz conjecture \\
+- & Konstadinidis & 2006 & The real $3x+1$ problem \\
+- & Elliott & 1985 & Arithmetic Functions and Integer Products \\
+P & Eisele  \& Hadeler & 1990 & Game of Cards, Dynamical Systems, and a Characterization of the Fl ... \\
+C & Kosobutskyy  \& Rebot & 2023 & Collatz Conjecture 3n  1 as a Newton Binomial Problem \\
+L & Devienne et al. & 1993 & Halting Problem of One Binary Horn Clause is Undecidable \\
+- & Filipponi & 1991 & On the $3n+1$ Problem: Something Old, Something New \\
+- & Qu  \& Jing-hua & 2002 & The $3x+1$ problem and its necessary and sufficient condition \\
+- & Banerji & 1996 & Some Properties of the $3n+1$ Function \\
+V & Steiner & 1978 & A Theorem on the Syracuse Problem \\
+G & Steiner & 1981 & On the ``$Qx+1$'' Problem, $Q$ odd \\
+G & Steiner & 1981 & On the ``$Qx+1$'' Problem, $Q$ odd II \\
+- & Queneau & 1963 & Note complementaire sur la Sextine \\
+- & Queneau & 1972 & Sur les suites $s$-additives \\
+G & Ohira  \& Yamashita & 2004 & A Generalization of the Collatz problem \\
+V & Ohira  \& Yamashita & 2004 & On the $p$-Collatz problem \\
+- & Blecksmith et al. & 1998 & 3-Smooth Representations of Integers \\
+V & Dunn & 1973 & On Ulam's Problem \\
+- & Crandall & 1978 & On the ``$3x + 1$'' problem \\
+S & Guy & 1981 & Unsolved Problems in Number Theory \\
+- & Guy & 1983 & Don't try to solve these problems! \\
+- & Guy & 1983 & Conway's prime producing machine \\
+- & Guy & 1986 & John Isbell's Game of Beanstalk and John Conway's Game of Beans Do ... \\
+D & Terras & 1976 & A stopping time problem on the positive integers \\
+D & Terras & 1979 & On the existence of a density \\
+G & Buttsworth  \& Matthews & 1990 & On some Markov matrices arising from the generalized Collatz mapping \\
+G & Santos & 2020 & On the Collatz general problem qn+1 \\
+- & Tijdeman & 1972 & Note on Mahler's $3/2$-problem \\
+- & Stemmler & 1964 & The ideal Waring problem for exponents $401-200,000$ \\
+- & Anderson & 1987 & Struggling with the $3x  +  1$ problem \\
+V & Burckel & 1994 & Functional equations associated with congruential functions \\
+- & Albeverio et al. & 1989 & Una breve introduzione a diffusioni su insiemi frattali e ad alcun ... \\
+C & Eliahou & 1993 & The $3x +  1$ problem: New Lower Bounds on Nontrivial Cycle Lengths \\
+- & Eliahou  \& Verger-Gaugry & 2025 & The number system in rational base $3/2$ and the $3x+1$ problem \\
+V & Wang & 1988 & Some researches for transformation over recursive programs \\
+C & Shi  \& Li & 2005 & Properties of cycle sets \\
+- & Shi  \& Li & 2005 & Properties of the $3x+1$ problem \\
+V & Letherman et al. & 1999 & On the $3X+1$ problem and holomorphic dynamics \\
+- & Volkov & 2006 & A probabilistic model for the $5k+1$ problem and related problems \\
+- & Wagon & 1985 & The Collatz problem \\
+- & Andrei  \& Masalagiu & 1998 & About the Collatz Conjecture \\
+- & Andrei et al. & 2000 & Some results on the Collatz problem \\
+- & Andrei et al. & 2007 & A Functional View over the Collatz's Problem \\
+- & Kohl & 2005 & Restklassenweise affine Gruppen \\
+D & Kohl & 2007 & Wildness of iteration of certain residue class-wise affine mappings \\
+- & Kohl & 2008 & On conjugates of Collatz-type mappings \\
+V & Kohl & 2008 & Algorithms for a class of infinite permutation groups \\
+D & Kohl & 2010 & A simple group generated by involutions interchanging residue clas ... \\
+- & Beltraminelli et al. & 1994 & Orbite inverse nel problema del $3n+1$ \\
+G & Brocco & 1995 & A Note on Mignosi's Generalization of the $3x+1$ Problem \\
+- & Isard  \& Zwicky & 1970 & Three open questions in the theory of one-symbol Smullyan systems \\
+G & Kurtz  \& Simon & 2007 & The undecidability of the generalized Collatz problem \\
+- & Sterin  \& Tristan & 2020 & Binary expression of ancestors in the Collatz graph \\
+V & Sterin et al. & 2020 & The Collatz Process Embeds a Base Conversion Algorithm \\
+- & Puddu & 1986 & The Syracuse problem (Spanish), 5$^rmth$ \\
+- & Tang  \& Xian & 2006 & About recursion relation of $3x+1$ Conjecture (Chinese) \\
+V & Urvoy & 2000 & Regularity of congruential graphs \\
+D & Tao  \& Terence & 2022 & Almost all orbits of the Collatz map attain almost bounded values \\
+- & Amdeberhan et al. & 2008 & The $2$-adic valuation of a sequence arising from a rational integ ... \\
+C & Brox & 2000 & Collatz cycles with few descents \\
+L & Cloney et al. & 1987 & The $3x  +  1$ Problem: a Quasi-Cellular Automaton \\
+C & Keller & 1999 & Finite cycles of certain periodically linear functions \\
+V & Silva & 2004 & Computational verification of $3x+1$ conjecture \\
+D & Silva & 1999 & Maximum Excursion and Stopping Time Record-Holders for the $3x+1$ ... \\
+- & Urata & 1999 & Collatz Problem IV \\
+- & Urata & 2002 & Some holomorphic functions connected with the Collatz problem \\
+- & Urata & 2003 & The Collatz problem over $2$-adic integers \\
+- & Urata & 2007 & Collatz's problem \\
+- & Urata  \& Kajita & 1998 & Collatz Problem III \\
+- & Urata  \& Suzuki & 1996 & Collatz Problem \\
+- & Urata et al. & 1997 & Collatz Problem II \\
+- & Urata  \& Hamada & 2005 & Positive values of a holomorphic function connected with the Colla ... \\
+V & Sterin & 2023 & Six Tiles : From Collatz Sequences to Algorithmic DNA Origami \\
+V & Chvatal et al. & 1972 & Selected combinatorial research problems \\
+P & Bergelson et al. & 2006 & Affine Actions of a Free Semigroup on the Real Line \\
+- & Ellison & 1971 & On a Theorem of S. Sivasankaranarayana Pillai \\
+- & Wang  \& Nian-liang & 2002 & The way to prove Collatz problem \\
+G & Wang et al. & 2003 & The distribution of the fixed points on the real axis of a general ... \\
+G & Wang et al. & 2008 & Dynamics of the generalized $3x+1$ function determined by its frac ... \\
+- & Qiu & 1997 & Study on $``3x+1"$ problem \\
+- & Hotzel & 2003 & Beitage zum $3n+1$-Problem \\
+- & Wirsching  \& J. & 2001 & A functional differential equation and $3n + 1$ dynamics \\
+D & Wirsching  \& J. & 2003 & On the problem of positive predecessor density in $3N+1$ dynamics \\
+- & Gaschutz & 1982 & Linear abgeschlossene Zahlenmengen I. [Linearly closed number sets ... \\
+- & Wu  \& Bang & 1992 & A tendency of the proportion  of consecutive numbers of 
+the same ... \\
+- & Wu  \& Bang & 1993 & On the consecutive positive integers of the same height in the 
+Co ... \\
+- & Wu  \& Bang & 1995 & The monotonicity of pairs of coalescence numbers in the Collatz
+pr ... \\
+D & Wu et al. & 2003 & On the equality of the adequate stopping time and the coefficient ... \\
+- & Wu et al. & 2001 & On the traditional iteration and the elongate iteration of the $3N$ ... \\
+- & Wu et al. & 2001 & Family of consecutive integer pairs of the same height in the Coll ... \\
+- & Wu et al. & 2001 & Elongate iteration for the $3N+1$ Conjecture \\
+- & Wu  \& Quan & 2003 & An equivalent proposition of Collatz conjecture \\
+- & Narkiewicz & 1980 & A note on a paper of H. Gupta concerning powers of 2 and 3 \\
+- & Xia  \& Ye & 2003 & Some thoughts about $3X+1$ Conjecture \\
+- & Xie  \& Guo & 2006 & The interesting $3x+1$ problem \\
+G & Wang  \& Yu & 2007 & Visualizing generalized $3x+1$ function dynamics based on fractal \\
+- & Sinai & 2003 & Statistical $(3X+1)$-Problem \\
+- & Sinai & 2003 & Uniform distribution in the $(3x+1)$ problem \\
+- & Sinai & 2004 & A theorem about uniform distribution \\
+- & Yamashita  \& Michinori & 2002 & $3x+1$ problem from the $(e,k)$-perspective \\
+- & Yamashita  \& Michinori & 2006 & Note on the $3x pm1$ Problem \\
+- & Yang  \& Hua & 1998 & An equivalent set for the $3x+1$ conjecture \\
+- & Yang et al. & 1988 & Kakutani conjecture and graph theory representation of the black h ... \\
+V & Ito  \& Nakano & 2009 & A Hardware-Software Cooperative Approach to the Exhaustive verific ... \\
+- & Peres et al. & 2006 & Absolute continuity for random iterated function systems with over ... \\
+G & Franco  \& Pomerance & 1995 & On a Conjecture of Crandall Concerning the $qx  +  1$ Problem \\
+G & Franco & 1990 & Diophantine Approximation and the $qx  +  1$ Problem \\
+G & Zarnowski  \& E. & 2001 & Generalized inverses and the total stopping time of Collatz sequen ... \\
+- & Zarnowski  \& E. & 2008 & The congruence structure of the $3x+1$ map \\
+G & Zhang  \& Yu & 1990 & A generalization of Kakutani's conjecture \\
+- & Zhang et al. & 1998 & Problems on mapping sequences \\
+- & Zhou  \& Zhong & 1995 & Some discussion on the $3x+1$ problem \\
+- & Zhou  \& Zhong & 1997 & Some recurrence relations connected with the $3x+1$ problem \\
+- & Zhou et al. & 2007 & On the Collatz Conjecture \\ \\
+% <<<END-DATA lit_corpus
+\bottomrule
+\end{longtable}
+\end{center}
+
+% ============================================================= references ===
+\FloatBarrier
+\begin{thebibliography}{99}
+
+\bibitem{carykh}
+carykh.
+\newblock The Collatz Multiverse.
+\newblock YouTube, 22 November 2025.
+\newblock \url{https://youtu.be/n63FBYqj98E}
+
+\bibitem{lazykh}
+lazykh (carykh's second channel).
+\newblock Collatz Multiverse Ramble, Part 2!
+\newblock YouTube, 22 November 2025.
+\newblock \url{https://youtu.be/3JO-8oZ-IlQ}
+
+\bibitem{artem}
+Artem.
+\newblock The Collatz Multiverse Multiverse.
+\newblock YouTube, 14 December 2025.
+\newblock \url{https://youtu.be/MNFWrB8iUbM}
+
+\bibitem{crandall}
+R.~E.~Crandall.
+\newblock On the ``$3x+1$'' problem.
+\newblock \emph{Mathematics of Computation}, 32(144):1281--1292, 1978.
+
+\bibitem{fp}
+Z.~Franco and C.~Pomerance.
+\newblock On a conjecture of Crandall concerning the $qx+1$ problem.
+\newblock \emph{Mathematics of Computation}, 64(211):1333--1336, 1995.
+
+\bibitem{santos}
+R.~Santos.
+\newblock On the Collatz general problem $qn+1$.
+\newblock arXiv:2005.00346, 2020.
+\newblock \url{https://arxiv.org/abs/2005.00346}
+
+\bibitem{bm}
+E.~G.~Belaga and M.~Mignotte.
+\newblock Embedding the $3x+1$ conjecture in a $3x+d$ context.
+\newblock \emph{Experimental Mathematics}, 7(2):145--151, 1998.
+
+\bibitem{matthews}
+K.~R.~Matthews.
+\newblock Generalized $3x+1$ mappings: Markov chains and ergodic theory.
+\newblock In J.~C.~Lagarias, editor, \emph{The Ultimate Challenge: The
+  $3x+1$ Problem}, pages 79--103. American Mathematical Society, 2010.
+
+\bibitem{conway}
+J.~H.~Conway.
+\newblock Unpredictable iterations.
+\newblock In \emph{Proceedings of the 1972 Number Theory Conference}, pages
+  49--52. University of Colorado, Boulder, 1972.
+
+\bibitem{kurtzsimon}
+S.~A.~Kurtz and J.~Simon.
+\newblock The undecidability of the generalized Collatz problem.
+\newblock In \emph{Theory and Applications of Models of Computation (TAMC
+  2007)}, volume 4484 of \emph{Lecture Notes in Computer Science}, pages
+  542--553. Springer, 2007.
+
+\bibitem{eliahou}
+S.~Eliahou.
+\newblock The $3x+1$ problem: new lower bounds on nontrivial cycle lengths.
+\newblock \emph{Discrete Mathematics}, 118(1--3):45--56, 1993.
+
+\bibitem{hercher}
+C.~Hercher.
+\newblock There are no Collatz $m$-cycles with $m \leq 91$.
+\newblock \emph{Journal of Integer Sequences}, 26, Article 23.3.5, 2023.
+
+\bibitem{barina}
+D.~Barina.
+\newblock Improved verification limit for the convergence of the Collatz
+  conjecture.
+\newblock \emph{The Journal of Supercomputing}, 2025.
+
+\bibitem{ggm}
+F.~Gon\c{c}alves, R.~Greenfeld, and J.~Madrid.
+\newblock Generalized Collatz maps with almost bounded orbits.
+\newblock arXiv:2111.06170, 2021.
+\newblock \url{https://arxiv.org/abs/2111.06170}
+
+\bibitem{lagbib1}
+J.~C.~Lagarias.
+\newblock The $3x+1$ problem: an annotated bibliography (1963--1999).
+\newblock arXiv:math/0309224.
+
+\bibitem{lagbib2}
+J.~C.~Lagarias.
+\newblock The $3x+1$ problem: an annotated bibliography, II (2000--2009).
+\newblock arXiv:math/0608208.
+
+\bibitem{lagbib3}
+J.~C.~Lagarias.
+\newblock The $3x+1$ problem: an overview.
+\newblock arXiv:2111.02635.
+
+\bibitem{cresearch}
+Collatz Research.
+\newblock \url{https://www.collatzresearch.org/}
+
+\bibitem{ccc}
+The Collatz Conjecture Challenge.
+\newblock Formalising the Collatz literature, one paper at a time.
+\newblock \url{https://ccchallenge.org/} (snapshot of 375 papers, 2026).
+
+\bibitem{steiner1981a}
+R.~P.~Steiner.
+\newblock On the ``$Qx+1$'' problem, $Q$ odd.
+\newblock \emph{Fibonacci Quarterly}, 19:285--288, 1981.
+
+\bibitem{steiner1981b}
+R.~P.~Steiner.
+\newblock On the ``$Qx+1$'' problem, $Q$ odd II.
+\newblock \emph{Fibonacci Quarterly}, 19:293--296, 1981.
+
+\bibitem{franco1990}
+Z.~M.~Franco.
+\newblock Diophantine approximation and the $qx+1$ problem.
+\newblock Ph.D. thesis / report, 1990.
+
+\bibitem{belaga2003}
+E.~Belaga.
+\newblock Effective polynomial upper bounds to perigees and numbers of
+  $(3x+d)$-cycles of a given oddlength.
+\newblock \emph{Acta Arithmetica}, 106(2):197--206, 2003.
+
+\bibitem{bm2006}
+E.~Belaga and M.~Mignotte.
+\newblock The Collatz problem and its generalizations: experimental data.
+  Table 1: primitive cycles of $3x+d$ mappings.
+\newblock Universit\'e Louis Pasteur, Strasbourg, 2006.
+
+\bibitem{simons2008}
+J.~L.~Simons.
+\newblock On the (non-)existence of $m$-cycles for generalized Syracuse
+  sequences.
+\newblock \emph{Acta Arithmetica}, 131(3):217--254, 2008.
+
+\bibitem{mw1984}
+K.~R.~Matthews and A.~M.~Watts.
+\newblock A generalization of Hasse's generalization of the Syracuse
+  algorithm.
+\newblock \emph{Acta Arithmetica}, 43:167--175, 1984.
+
+\bibitem{mw1985}
+K.~R.~Matthews and A.~M.~Watts.
+\newblock A Markov approach to the generalized Syracuse algorithm.
+\newblock \emph{Acta Arithmetica}, 45:29--42, 1985.
+
+\bibitem{leigh1986}
+G.~M.~Leigh.
+\newblock A Markov process underlying the generalized Syracuse algorithm.
+\newblock \emph{Acta Arithmetica}, 46:125--143, 1986.
+
+\bibitem{bmatthews1990}
+R.~N.~Buttsworth and K.~R.~Matthews.
+\newblock On some Markov matrices arising from the generalized Collatz
+  mapping.
+\newblock \emph{Acta Arithmetica}, 55:43--57, 1990.
+
+\bibitem{matthews2005}
+K.~R.~Matthews.
+\newblock The generalized $3x+1$ mapping.
+\newblock \url{http://www.numbertheory.org/}, 2005.
+
+\bibitem{venturini1992}
+G.~Venturini.
+\newblock Iterates of number theoretic functions with periodic rational
+  coefficients (generalization of the $3x+1$ problem).
+\newblock \emph{Studies in Applied Mathematics}, 86:185--218, 1992.
+
+\bibitem{venturini1997}
+G.~Venturini.
+\newblock On a generalization of the $3x+1$ problem.
+\newblock \emph{Advances in Applied Mathematics}, 19:295--305, 1997.
+
+\bibitem{mignosi1995}
+F.~Mignosi.
+\newblock On a generalization of the $3x+1$ problem.
+\newblock \emph{Journal of Number Theory}, 55:28--45, 1995.
+
+\bibitem{brocco1995}
+S.~Brocco.
+\newblock A note on Mignosi's generalization of the $3x+1$ problem.
+\newblock \emph{Journal of Number Theory}, 52:173--178, 1995.
+
+\bibitem{rouetfeix}
+J.-L.~Rouet and M.~R.~Feix.
+\newblock A generalization of the Collatz problem. Building cycles and a
+  stochastic approach.
+\newblock \emph{Journal of Statistical Physics}, 107(5/6):1283--1298, 2002.
+
+\bibitem{mleigh1987}
+K.~R.~Matthews and G.~M.~Leigh.
+\newblock A generalization of the Syracuse algorithm to $\mathbb{F}_{q}[x]$.
+\newblock \emph{Journal of Number Theory}, 25:274--278, 1987.
+
+\bibitem{hicks2008}
+K.~Hicks, G.~L.~Mullen, J.~L.~Yucas, and R.~Zavislak.
+\newblock A polynomial analogue of the $3N+1$ problem?
+\newblock \emph{American Mathematical Monthly}, 115:615--622, 2008.
+
+\bibitem{lagarias}
+J.~C.~Lagarias.
+\newblock The $3x+1$ problem and its generalizations.
+\newblock \emph{The American Mathematical Monthly}, 92(1):3--23, 1985.
+
+\bibitem{lagariasbook}
+J.~C.~Lagarias, editor.
+\newblock \emph{The Ultimate Challenge: The $3x+1$ Problem}.
+\newblock American Mathematical Society, 2010.
+
+\bibitem{terras}
+R.~Terras.
+\newblock A stopping time problem on the positive integers.
+\newblock \emph{Acta Arithmetica}, 30(3):241--252, 1976.
+
+\bibitem{tao}
+T.~Tao.
+\newblock Almost all orbits of the Collatz map attain almost bounded values.
+\newblock \emph{Forum of Mathematics, Pi}, 10:e12, 2022.
+
+\bibitem{sievepaper}
+RobinCodes.
+\newblock Formal verification of a Collatz residue sieve.
+\newblock In the repository below, \texttt{Sieve (Residual Analysis)/paper/}.
+
+\bibitem{repo}
+RobinCodes.
+\newblock Collatz --- sieves, generalised maps and orbital graphs.
+\newblock \url{https://github.com/RobinCodes/Collatz}
+
+\end{thebibliography}
+
+\end{document}

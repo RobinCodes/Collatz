@@ -496,9 +496,37 @@ class CollatzVisualizer(tk.Tk):
                  command=self.export_data,
                  **btn_style).pack(pady=3)
 
+        tk.Button(button_frame, text="🌌 Multiverse",
+                 command=self.open_multiverse, bg=self.theme["highlight"],
+                 fg="white", font=("Arial", 10, "bold"), width=15
+                 ).pack(pady=3)
+
     # --------------------------------------------------
     # Core Functionality
     # --------------------------------------------------
+
+    def open_multiverse(self):
+        """Open the Multiverse workspace.
+
+        The structure theory lives in ../Multiverse/multiverse.py and the
+        panels in multiverse_ui.py; both are imported lazily so that this
+        program still starts if they are absent.
+        """
+        try:
+            import multiverse_ui
+        except Exception as exc:                       # noqa: BLE001
+            messagebox.showerror(
+                "Multiverse",
+                "Could not load the Multiverse workspace.\n\n"
+                f"{type(exc).__name__}: {exc}\n\n"
+                "It needs multiverse_ui.py beside this file and "
+                "../Multiverse/multiverse.py in the repository.")
+            return
+        try:
+            multiverse_ui.open_multiverse(self)
+            self.status_var.set("Multiverse workspace opened")
+        except Exception as exc:                       # noqa: BLE001
+            messagebox.showerror("Multiverse", f"Failed to open: {exc}")
 
     def open_advanced_config(self):
         """Open advanced configuration modal"""
@@ -663,7 +691,11 @@ class CollatzVisualizer(tk.Tk):
                          fontweight='bold', pad=20)
         self.ax.tick_params(colors=self.theme["text"])
         
-        if len(self.results) <= 5:
+        # Trajectories are only labelled when a map has a single start value,
+        # so with several starts there is nothing to put in a legend and
+        # matplotlib warns. Ask first.
+        handles, _ = self.ax.get_legend_handles_labels()
+        if handles and len(self.results) <= 5:
             self.ax.legend(facecolor=self.theme["panel"], 
                           edgecolor=self.theme["text"],
                           labelcolor=self.theme["text"])

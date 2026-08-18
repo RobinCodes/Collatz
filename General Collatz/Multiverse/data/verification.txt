@@ -1,0 +1,32 @@
+Numerical verification of the paper's theorems
+(these are checks, not proofs; the proofs are in the paper)
+==============================================================================
+
+T-halve    PASS        341941 cases   halving symmetry: T_{2a,2b} refines T_{a,b}
+T-scale    PASS        278400 cases   odd scaling: T_{a,db}(dn) = d T_{a,b}(n) for odd d
+T-attr     PASS         16059 cases   attraction: p | gcd(a,b) forces every orbit into p^{v_p(b)}Z
+T-rep      PASS         73632 cases   repulsion: min(v_p(n), v_p(b)) is an orbit invariant when p | b, p does not divide a
+T-norm     PASS         39601 cases   normal form is coprime and idempotent
+T-parity   PASS         29640 cases   a + b odd (a,b >= 1): no orbit is ever periodic
+T-desc     PASS         23940 cases   a = 1, b odd: every orbit cycles, with least cycle element <= b
+T-const    PASS           199 cases   a = 0: exactly one cycle, of length v_2(b) + 1
+T-shape    PASS            39 cases   b = 0: every orbit cycles iff a is a power of two, with period log2(a) + 1
+T-cyceq    PASS           301 cases   cycle equation n1(2^m - a^k) = b * sum a^{k-i} 2^{...}
+T-decomp   PASS            33 cases   divisor decomposition: the d-graded part of Cyc(T_{a,b}) is d * PrimCyc(T_{a,b/d})
+T-attred   PASS            30 cases   attracting reduction is a bijection on cycles, scaling by D
+T-tier     PASS         14400 cases   knowledge ladder: OPEN = minimal + open normal form, DECIDED = the a=1 row, CLOSED = proved with closed-form cycles
+T-Zhalf    PASS          3660 cases   Z>0 invariant iff a+b >= 1; Z<0 invariant iff b <= a-1
+T-Zcross   PASS       1415200 cases   sign changes only at odd n with |n| <= |b|/a
+T-one      PASS          3481 cases   1 lies on a cycle iff the orbit of 1 meets a power of two
+T-onestep  PASS           673 cases   a + b = 2^k gives a cycle through 1 of period k+1
+T-desc2b   PASS           381 cases   every cycle of x+b is contained in [1, 2b]
+T-seedscale PASS           104 cases   n on a cycle of ax+b => mn on a cycle of ax+mb for ODD m
+T-noconj   PASS           104 cases   cC is NEVER a cycle of T_(ca,cb) (the refuted conjugacy)
+T-radical  PASS          7140 cases   nf(a,b) = (a,1) iff rad(b) | a  (b odd)
+T-qscale   PASS         80808 cases   q-ary scaling: F_(qa,qb) refines F_(a,b)
+T-qtwist   PASS        510900 cases   q-ary twisted scaling: n -> dn permutes the branches
+T-resobs   PASS         92510 cases   residue obstruction: escaping residues never divide, and diverge under the growth condition
+T-primmap  PASS         60000 cases   primality map: every seed tested is eventually periodic, with exactly two cycles
+T-neg      PASS          9251 cases   negation duality: -T_{a,b}(n) = T_{a,-b}(-n)
+
+26/26 checks pass

@@ -1,0 +1,24 @@
+  a\b   0  1  2  3  4  5  6  7  8  9 10 11 12
+      ---------------------------------------
+    0   C  C  C  C  C  C  C  C  C  C  C  C  C
+    1   S  D  R  D  R  D  R  D  R  D  R  D  R
+    2   S  R  H  R  H  R  H  R  H  R  H  R  H
+    3   R  ?  R  A  R  ?  R  ?  R  A  R  ?  R
+    4   S  R  H  R  H  R  H  R  H  R  H  R  H
+    5   R  ?  R  ?  R  A  R  ?  R  ?  R  ?  R
+    6   R  R  H  R  H  R  H  R  H  R  H  R  H
+    7   R  ?  R  ?  R  ?  R  A  R  ?  R  ?  R
+    8   S  R  H  R  H  R  H  R  H  R  H  R  H
+    9   R  ?  R  A  R  ?  R  ?  R  A  R  ?  R
+   10   R  R  H  R  H  R  H  R  H  R  H  R  H
+   11   R  ?  R  ?  R  ?  R  ?  R  ?  R  A  R
+   12   R  R  H  R  H  R  H  R  H  R  H  R  H
+
+legend:
+  C  a = 0: one cycle, every orbit enters it
+  S  b = 0, a a power of 2: every odd n is on a cycle
+  R  all orbits diverge (b = 0 with odd part > 1, or a + b odd)
+  H  a, b both even: halving symmetry
+  A  odd prime divides gcd(a, b): absorbed into a scaled copy
+  D  a = 1, b odd: two-step descent forces a cycle
+  ?  irreducible and open

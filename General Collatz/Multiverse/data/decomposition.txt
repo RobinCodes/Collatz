@@ -1,0 +1,80 @@
+Divisor decomposition of the cycle set
+
+  Cyc(T_{a,b})  =  disjoint union over odd d | b  of  d * PrimCyc(T_{a, b/d})
+
+verified by grouping each cycle by its repelling-prime content and dividing through
+==============================================================================
+
+f(x) = 3x + 5   (6 cycles found)
+   d = 1       5 cycle(s)  =  1 * primitive cycles of 3x+5
+        len 4   k=1   m=3   min=1       max=8            eqn residual 0
+        len 8   k=3   m=5   min=19      max=152          eqn residual 0
+        len 8   k=3   m=5   min=23      max=116          eqn residual 0
+        len 44  k=17  m=27  min=187     max=8324         eqn residual 0
+        len 44  k=17  m=27  min=347     max=10196        eqn residual 0
+   d = 5       1 cycle(s)  =  5 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=5       max=20           eqn residual 0
+
+f(x) = 3x + 7   (2 cycles found)
+   d = 1       1 cycle(s)  =  1 * primitive cycles of 3x+7
+        len 6   k=2   m=4   min=5       max=40           eqn residual 0
+   d = 7       1 cycle(s)  =  7 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=7       max=28           eqn residual 0
+
+f(x) = 3x + 25   (8 cycles found)
+   d = 1       2 cycle(s)  =  1 * primitive cycles of 3x+25
+        len 24  k=8   m=16  min=7       max=436          eqn residual 0
+        len 12  k=4   m=8   min=17      max=148          eqn residual 0
+   d = 5       5 cycle(s)  =  5 * primitive cycles of 3x+5
+        len 4   k=1   m=3   min=5       max=40           eqn residual 0
+        len 8   k=3   m=5   min=95      max=760          eqn residual 0
+        len 8   k=3   m=5   min=115     max=580          eqn residual 0
+        len 44  k=17  m=27  min=935     max=41620        eqn residual 0
+        len 44  k=17  m=27  min=1735    max=50980        eqn residual 0
+   d = 25      1 cycle(s)  =  25 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=25      max=100          eqn residual 0
+
+f(x) = 3x + 35   (9 cycles found)
+   d = 1       2 cycle(s)  =  1 * primitive cycles of 3x+35
+        len 12  k=4   m=8   min=13      max=416          eqn residual 0
+        len 12  k=4   m=8   min=17      max=272          eqn residual 0
+   d = 5       1 cycle(s)  =  5 * primitive cycles of 3x+7
+        len 6   k=2   m=4   min=25      max=200          eqn residual 0
+   d = 7       5 cycle(s)  =  7 * primitive cycles of 3x+5
+        len 4   k=1   m=3   min=7       max=56           eqn residual 0
+        len 8   k=3   m=5   min=133     max=1064         eqn residual 0
+        len 8   k=3   m=5   min=161     max=812          eqn residual 0
+        len 44  k=17  m=27  min=1309    max=58268        eqn residual 0
+        len 44  k=17  m=27  min=2429    max=71372        eqn residual 0
+   d = 35      1 cycle(s)  =  35 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=35      max=140          eqn residual 0
+
+f(x) = 3x + 49   (3 cycles found)
+   d = 1       1 cycle(s)  =  1 * primitive cycles of 3x+49
+        len 60  k=22  m=38  min=25      max=4276         eqn residual 0
+   d = 7       1 cycle(s)  =  7 * primitive cycles of 3x+7
+        len 6   k=2   m=4   min=35      max=280          eqn residual 0
+   d = 49      1 cycle(s)  =  49 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=49      max=196          eqn residual 0
+
+f(x) = 3x + 65   (16 cycles found)
+   d = 1       1 cycle(s)  =  1 * primitive cycles of 3x+65
+        len 36  k=12  m=24  min=19      max=1328         eqn residual 0
+   d = 5       9 cycle(s)  =  5 * primitive cycles of 3x+13
+        len 5   k=1   m=4   min=5       max=80           eqn residual 0
+        len 39  k=15  m=24  min=655     max=27860        eqn residual 0
+        len 13  k=5   m=8   min=1055    max=16880        eqn residual 0
+        len 13  k=5   m=8   min=1135    max=12020        eqn residual 0
+        len 13  k=5   m=8   min=1255    max=10040        eqn residual 0
+        len 13  k=5   m=8   min=1295    max=13640        eqn residual 0
+        len 13  k=5   m=8   min=1415    max=9860         eqn residual 0
+        len 13  k=5   m=8   min=1435    max=11480        eqn residual 0
+        len 13  k=5   m=8   min=1595    max=8420         eqn residual 0
+   d = 13      5 cycle(s)  =  13 * primitive cycles of 3x+5
+        len 4   k=1   m=3   min=13      max=104          eqn residual 0
+        len 8   k=3   m=5   min=247     max=1976         eqn residual 0
+        len 8   k=3   m=5   min=299     max=1508         eqn residual 0
+        len 44  k=17  m=27  min=2431    max=108212       eqn residual 0
+        len 44  k=17  m=27  min=4511    max=132548       eqn residual 0
+   d = 65      1 cycle(s)  =  65 * primitive cycles of 3x+1
+        len 3   k=1   m=2   min=65      max=260          eqn residual 0

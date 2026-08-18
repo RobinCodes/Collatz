@@ -1,0 +1,19 @@
+The knowledge ladder
+
+  CLOSED     fate proved AND the cycle set in closed form
+  DECIDED    fate proved, cycles computable, no formula in b
+  REDUCIBLE  fate unknown, but equivalent to a smaller open universe
+  OPEN       fate unknown and irreducible -- its own normal form
+
+limiting densities: CLOSED 0.666667, DECIDED 0.000000, REDUCIBLE 0.130691, OPEN 0.202642
+==============================================================================
+
+      N       CLOSED      DECIDED    REDUCIBLE         OPEN
+     10     0.640000     0.100000     0.120000     0.140000
+     50     0.662400     0.020000     0.123200     0.194400
+    100     0.665600     0.010000     0.128700     0.195700
+    250     0.665664     0.004000     0.130208     0.200128
+    500     0.666416     0.002000     0.129780     0.201804
+   1000     0.666604     0.001000     0.130235     0.202161
+
+  limit     0.666667     0.000000     0.130691     0.202642
