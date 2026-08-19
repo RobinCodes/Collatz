@@ -357,7 +357,12 @@ def reduction_chain(a: int, b: int) -> Tuple[Tuple[int, int], List[Reduction]]:
                           the map is conjugate to (a, b / p^{v_p(b)}).
 
     The rules commute, so the normal form is unique; it always satisfies
-    gcd(a', b') = 1.
+    gcd(a', b') = 1 -- but only for a >= 1.  At a = 0 every prime divides a,
+    rule (A) would be applicable for every odd prime at once, and gcd(0,b)=b,
+    so the coprimality claim genuinely fails there; we simply do not apply
+    (A) when a = 0, because `classify` settles that row outright as the
+    constant family and never consults the normal form.  See the paper,
+    Theorem "normal form" and the remark following it.
     """
     chain: List[Reduction] = []
     cur = (a, b)

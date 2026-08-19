@@ -133,9 +133,9 @@ its cycle set exactly. We also determine when $1$ itself is periodic, and
 sharpen the row $a=1$ enough to make its cycle census exact rather than a
 lower bound. Two further chapters ask what survives modulo $q$ rather than
 modulo $2$, and what survives when the branch is chosen by a property that is
-not a congruence at all; the answer to the second is essentially nothing, and
-we argue that this, rather than any difficulty of degree, is what separates
-$3x+1$ from its neighbours.
+not a congruence at all; in the second case none of this paper's machinery
+survives, and we argue that this, rather than any difficulty of degree, is
+what separates $3x+1$ from its neighbours.
 
 The framing and many of the phenomena are due to carykh and to Artem, who
 found them experimentally; we attribute each result and correct three
@@ -265,8 +265,12 @@ map of Section~\ref{sec:qary} than to the two-parameter family here.
 Two facts from that literature bound what this paper can hope to do. First,
 Conway~\cite{conway} showed that generalized Collatz functions are universal,
 and Kurtz and Simon~\cite{kurtzsimon} that the associated reachability problem
-is $\Pi^{0}_{2}$-complete; so no classification theorem can cover the
-unrestricted $q$-ary family. Second, Franco and Pomerance proved Crandall's conjecture --- that $qx+1$
+is $\Pi^{0}_{2}$-complete. Their setting is broader than ours --- Conway
+allows rational multipliers subject to integrality, which the fixed-modulus
+integer shape of Section~\ref{sec:qary} does not --- so this does not show
+that our $q$-ary maps are universal. What it does show is that no
+classification theorem can cover generalized Collatz functions in the wide
+sense, which is the ceiling any programme of this kind runs into. Second, Franco and Pomerance proved Crandall's conjecture --- that $qx+1$
 admits an orbit never reaching $1$ --- for almost all odd $q$. So along the
 column $b = 1$ the rows $a \geq 5$ are not merely unproven: for almost all
 such $a$ the Collatz-style statement is known to be \emph{false}. Our contribution is orthogonal to both: it is a structure
@@ -798,7 +802,7 @@ Proposition~\ref{prop:halve}.
 \label{sec:nf}
 
 \begin{definition}[Rewriting rules]\label{def:rules}
-On pairs $(a,b)$ with $a \geq 0$, $b \geq 1$ define
+On pairs $(a,b)$ with $a \geq 1$, $b \geq 1$ define
 \begin{align*}
   \textbf{(H)} && (a,b) &\longrightarrow (a/2,\; b/2)
      && \text{if } 2 \mid a \text{ and } 2 \mid b, \\
@@ -809,17 +813,28 @@ On pairs $(a,b)$ with $a \geq 0$, $b \geq 1$ define
 
 \begin{theorem}[Normal form]\label{thm:nf}
 The rewriting system $\{\textbf{(H)}, \textbf{(A)}\}$ is terminating and
-confluent on $\{(a,b) : a \geq 0,\ b \geq 1\}$. Its normal forms are exactly
-the pairs with $\gcd(a,b) = 1$, so every universe has a unique normal form
-$\normalform(a,b)$, and
+confluent on $\{(a,b) : a \geq 1,\ b \geq 1\}$. Its normal forms are exactly
+the pairs with $\gcd(a,b) = 1$, so every such universe has a unique normal
+form $\normalform(a,b)$, and
 \[
   \normalform(a,b) \;=\; \Bigl(\frac{a}{2^{s}},\ \frac{b}{2^{s} D}\Bigr),
   \qquad
   s = \min(\vtwo(a), \vtwo(b)),
   \quad
-  D = \prod_{\substack{p \mid a,\ p \neq 2}} p^{\vp(b)} .
+  D = \prod_{\substack{p \mid a,\ p \neq 2}} p^{\vp(b)} ,
 \]
+the product being finite because $a \geq 1$ has finitely many prime divisors.
 \end{theorem}
+
+\begin{remark}[Why $a \geq 1$]\label{rem:azero}
+The restriction is not cosmetic. Every prime divides $0$, so at $a = 0$ the
+product defining $D$ is infinite and rule \textbf{(A)} is applicable for every
+odd prime at once. One could adopt a convention making $(0,b)$ reduce to
+$(0,1)$, but there is no reason to: $\gcd(0,b) = b$, so the coprime normal
+forms in that row would be only $(0,1)$, and the row $a = 0$ is already solved
+outright by Proposition~\ref{prop:const} without any reduction. We therefore
+exclude it, and Theorem~\ref{thm:master} treats $a' = 0$ as its own case.
+\end{remark}
 
 \begin{proof}
 \emph{Termination.} Rule \textbf{(H)} decreases $\min(\vtwo(a),\vtwo(b))$ by
@@ -1166,8 +1181,9 @@ and exactly one of the following holds.
 \item[\textup{(3)}] $a' = 1$ and $b'$ is odd. The fate is \textsc{cyclic},
       with every cycle contained in $[1, 2b']$, so the cycle set is finite and
       computable \textup{(}Theorem~\ref{thm:descent}\textup{)}.
-\item[\textup{(4)}] $a' \geq 3$ is odd, $b'$ is odd, and $\gcd(a',b')=1$. The
-      fate is \textsc{open}. We call such a universe \emph{primitive}.
+\item[\textup{(4)}] $a' \geq 3$ is odd, $b'$ is odd, and $\gcd(a',b')=1$. We
+      call such a universe \emph{primitive}, and for these this paper proves
+      no fate at all.
 \end{enumerate}
 The case $b = 0$ is separate and is settled by
 Proposition~\ref{prop:shape}: the fate is \textsc{cyclic} if $a$ is a power of
@@ -1183,12 +1199,23 @@ they are both odd; then $a' = 1$ gives (3) and $a' \geq 3$ gives (4).
 Mutual exclusivity is clear. The cited results supply the fates.
 \end{proof}
 
-\begin{remark}
-Nothing in Theorem~\ref{thm:master} is a probabilistic or heuristic statement:
-cases (1)--(3) are proved outright, and case (4) is a statement that a proof
-is not known, not a statement that the fate is mixed. What \emph{is}
-heuristic is which fate case (4) is expected to have; see
-Section~\ref{sec:open}.
+\begin{remark}[What case (4) does and does not say]
+Cases (1)--(3) are proved outright and are statements about the dynamics.
+Case (4) is not: ``primitive'' is a condition on $(a',b')$, and the
+accompanying claim is about \emph{us}, namely that we prove nothing about
+those maps. \textsc{open} is an epistemic label --- Definition~\ref{def:fate}
+assigns it ``otherwise or when unknown'' --- so the honest reading of the
+theorem is:
+
+\begin{quote}
+every universe reduces either to one of four families whose fate is proved
+here, or to a primitive family for which this paper establishes no fate.
+\end{quote}
+
+It is emphatically not a claim that the primitive universes share some
+dynamical property. What is expected of them is heuristic and is discussed in
+Section~\ref{sec:open}; some of them, by Franco and Pomerance~\cite{fp}, are
+in fact known to fail the Collatz-style statement.
 \end{remark}
 
 % =============================================================== table ======
@@ -1498,8 +1525,10 @@ $3^{17} = 129{,}140{,}163$ close to $2^{27} = 134{,}217{,}728$. Our census
 confirms both $(k,m)$ pairs exactly. The mechanism is now visible: small
 cycle elements require $2^{m} - a^{k}$ to be large relative to the right-hand
 side, but $m/k$ must exceed $\log_{2}a$ only slightly for the sum to stay
-small --- so cycles cluster at convergents of the continued fraction of
-$\log_{2}a$. For $a=3$, $\log_{2}3 = 1.5849\ldots$ and $27/17 = 1.5882\ldots$
+small. This suggests --- heuristically; the theorem gives only
+$m/k > \log_{2}a$, and nothing more --- that cycles should cluster where
+$m/k$ is a good rational approximation to $\log_{2}a$, that is near the
+convergents of its continued fraction. For $a=3$, $\log_{2}3 = 1.5849\ldots$ and $27/17 = 1.5882\ldots$
 
 \subsection{Strata and the divisor decomposition}
 
@@ -1600,8 +1629,9 @@ $65 = 5 \cdot 13$ has $1 + 5 + 9 + 1 = 16$.
 
 Table~\ref{tab:rowa3} gives cycle counts for the row $a = 3$. The search
 window is seeds $1 \leq n \leq 20{,}000$ with a step budget of $200{,}000$;
-this is a \emph{converged} window in the sense that every count is identical
-at $20{,}000$ and at $100{,}000$ seeds. Counts remain lower bounds in
+this window is \emph{empirically stable}: every count is identical at
+$20{,}000$ and at $100{,}000$ seeds. Stability across the windows we tested is
+evidence, not proof, that the counts are complete. Counts remain lower bounds in
 principle --- a cycle whose basin of attraction misses the seed window is
 invisible to any such search --- so they should be read as ``at least''.
 
@@ -1658,7 +1688,7 @@ statement is conditional on $3x+1$ having only one cycle, which is not known;
 what \emph{is} unconditional is the equality of counts.
 
 Artem also observes that no $b < 100$ yields exactly seven cycles. Our
-converged search confirms this: the multiset of counts for odd $b \leq 99$
+wider search confirms this: the multiset of counts for odd $b \leq 99$
 contains $1,2,3,4,5,6,8,9,10,11,14$ and $16$, but not $7$. We have no
 explanation, and we note it is sensitive to the search window --- at
 $3{,}000$ seeds $b=71$ appears to have seven, and only widening the window to
@@ -1740,9 +1770,11 @@ standard equidistribution heuristic. Both cross $1$ at $a = 4$, so:
 These are heuristics with no proof in either direction, and the reader should
 treat the word ``expected'' strictly. What is worth recording is that the
 threshold $a < 4$ admits only $a \in \{1,3\}$ among odd multipliers, and
-$a=1$ is solved. \emph{The entire difficulty of the family is concentrated in
-the single row $a = 3$, plus the expanding rows where the difficulty is of
-the opposite kind.}
+$a=1$ is solved. If one grants the drift picture --- and it is only a
+picture --- then the difficulty of the family is concentrated in the single
+row $a = 3$, with the expanding rows $a \geq 5$ hard in the opposite
+direction. We stress that this is a reading of a heuristic, not a corollary
+of anything proved here.
 
 \subsection{Empirical growth statistics}
 
@@ -1916,7 +1948,7 @@ check & claim & cases & result \\
 \texttt{T-scale} & $T_{a,db}(dn) = d\,T_{a,b}(n)$ for odd $d$ & $278400$ & \ok \\
 \texttt{T-attr} & $p \mid \gcd(a,b)$ forces every orbit into $p^{v_p(b)}\mathbb{Z}$ & $16059$ & \ok \\
 \texttt{T-rep} & $\min(v_p(n), v_p(b))$ is an orbit invariant when $p \mid b$, $p \nmid a$ & $73632$ & \ok \\
-\texttt{T-norm} & the normal form is coprime and idempotent & $39601$ & \ok \\
+\texttt{T-norm} & the normal form is coprime and idempotent for $a \geq 1$; $a = 0$ needs no reduction & $39800$ & \ok \\
 \texttt{T-parity} & $a+b$ odd with $a,b \geq 1$: no orbit is ever periodic & $29640$ & \ok \\
 \texttt{T-desc} & $a=1$, $b$ odd: every orbit cycles, least cycle element $\leq b$ & $23940$ & \ok \\
 \texttt{T-const} & $a=0$: exactly one cycle, of period $v_2(b)+1$ & $199$ & \ok \\
@@ -1936,6 +1968,7 @@ check & claim & cases & result \\
 \texttt{T-qscale} & $q$-ary scaling: $F_{q\mathbf a, q\mathbf b}$ refines $F_{\mathbf a,\mathbf b}$ & $80808$ & \ok \\
 \texttt{T-qtwist} & $q$-ary twisted scaling: $n \mapsto dn$ permutes the branches & $510900$ & \ok \\
 \texttt{T-resobs} & escaping residues never divide, and diverge under the growth condition & $92510$ & \ok \\
+\texttt{T-qattract} & attracting sublattice: the induced coefficients are $a'_j = a_{mj \bmod q}$, $b'_j = b_{mj \bmod q}/m$ -- \emph{permuted} & $91260$ & \ok \\
 \texttt{T-primmap} & primality map: every seed tested is eventually periodic, with exactly two cycles & $60000$ & \ok \\
 \texttt{T-neg} & $T_{a,-b}(n) = -T_{a,b}(-n)$ & $9251$ & \ok \\
 % <<<END-DATA verification
@@ -2018,17 +2051,50 @@ $q \geq 3$: two different coefficient vectors can describe the same dynamics.
 \begin{proposition}[Attracting sublattice]\label{prop:qattract}
 Let $m \geq 2$ with $\gcd(m,q) = 1$, and suppose $m \mid a_{i}$ and
 $m \mid b_{i}$ for every $i$. Then $m\Z$ is invariant, every orbit enters it
-after its first affine step, and $F$ restricted to $m\Z$ is, via $n \mapsto
-n/m$, the map with coefficients $(a_{i}, b_{i}/m)$.
+after its first affine step, and $n \mapsto n/m$ carries $F$ restricted to
+$m\Z$ to the map $F'$ with coefficients
+\[
+  a'_{j} \;=\; a_{\,mj \bmod q}, \qquad
+  b'_{j} \;=\; \frac{b_{\,mj \bmod q}}{m},
+  \qquad 1 \leq j \leq q-1 .
+\]
 \end{proposition}
 
 \begin{proof}
-If $m \mid n$ and $q \mid n$ then $m \mid n/q$ because $\gcd(m,q)=1$; and
-$a_{i}n + b_{i} \equiv 0 \pmod m$ for every $n$ by hypothesis, which also
-gives the absorption after one affine step. The conjugacy is
-Proposition~\ref{prop:qtwist} with $d = m$ and $\sigma$ the identity on the
-relevant classes.
+\emph{Invariance and absorption.} If $m \mid n$ and $q \mid n$ then
+$m \mid n/q$, because $\gcd(m,q)=1$; and $a_{i}n + b_{i} \equiv 0 \pmod m$ for
+every $n$ and every $i$, by hypothesis. The second statement also gives the
+absorption: the value after the first affine step already lies in $m\Z$.
+
+\emph{The induced map.} Let $k \in \Z$ and put $n = mk$. Since
+$\gcd(m,q) = 1$, $n \equiv 0 \pmod q$ if and only if $k \equiv 0 \pmod q$,
+and then $F(n)/m = (n/q)/m = k/q$. Otherwise $k \equiv j \not\equiv 0$ and
+$n \equiv mj \not\equiv 0$, so $F$ applies the branch indexed by
+$mj \bmod q$:
+\[
+  \frac{F(mk)}{m} \;=\; \frac{a_{\,mj}\,mk + b_{\,mj}}{m}
+  \;=\; a_{\,mj}\,k + \frac{b_{\,mj}}{m},
+\]
+which is the displayed coefficient vector.
 \end{proof}
+
+\begin{remark}[Why the coefficients must be permuted]\label{rem:qattract}
+It is tempting to write the induced coefficients as $(a_{j}, b_{j}/m)$ ---
+scaling the offsets and leaving the multipliers where they are. That is
+\emph{false} for $q \geq 3$, and an earlier draft of this paper asserted it.
+Multiplication by $m$ permutes the nonzero residue classes, so the branch $F$
+applies to $mk$ is the one indexed by $mj$, not by $j$. For $q = 3$, $m = 2$,
+$\mathbf a = (2,4)$, $\mathbf b = (2,2)$ and $k = 1$ one gets
+$F(2)/2 = 10/2 = 5$, whereas the naive vector
+$(a_{j}, b_{j}/2) = ((2,4),(1,1))$ gives $2 \cdot 1 + 1 = 3$.
+
+The error is invisible at $q = 2$, where there is a single nonzero class and
+every permutation of it is the identity --- which is why nothing in
+Sections~\ref{sec:sym}--\ref{sec:open} is affected. It is the same phenomenon
+as the failure of rigidity noted after Proposition~\ref{prop:qtwist}: at
+$q \geq 3$ a scaling does not merely rescale a universe, it relabels its
+branches.
+\end{remark}
 
 \subsection{The residue obstruction}
 
@@ -2120,9 +2186,10 @@ region at every modulus, and $3x+1$ is merely its smallest member.
 \label{sec:beyond}
 
 Modularity is doing an enormous amount of work in everything above. This
-section asks what happens without it. The answer is that essentially nothing
-survives, but the reason is interesting and it suggests a principle we state
-as a conjecture.
+section asks what happens without it. The answer is that none of the
+machinery above survives, though the maps themselves need not be
+structureless; the reason is interesting, and it suggests a principle we
+state as a conjecture.
 
 \begin{definition}[Predicate map]\label{def:predmap}
 Let $P_{1},\dots,P_{k}$ be predicates on $\Z$ with $P_{k}$ always true, and
@@ -2150,13 +2217,24 @@ Each $P_{j}$ is determined by $n \bmod M$, so the branch taken is a function
 of $n \bmod M$; grouping the classes gives the stated shape.
 \end{proof}
 
-So the theory covers exactly the \emph{eventually periodic} predicates. The
-moment a predicate is not a congruence condition --- primality,
-squarefreeness, being a perfect power, a digit condition in a base coprime to
-the branch moduli --- every tool above fails at once: the residue graph does
-not exist, Terras-style class refinement has nothing to refine, and the
-affine bookkeeping that gives the cycle equation has no periodic structure to
-lean on.
+Proposition~\ref{prop:congpred} is one direction only: \emph{periodic}
+predicates --- unions of residue classes --- land inside the theory. An
+\emph{eventually} periodic predicate, one that is periodic beyond some
+threshold, differs from a periodic one on a finite set, so it gives the same
+map outside a finite region; the finitely many exceptional integers must then
+be handled by inspection, and they can create or destroy cycles, though they
+cannot affect the asymptotics. The converse --- that nothing outside this
+class admits a reduction theory --- is Conjecture~\ref{conj:boundary}, which
+we do not prove.
+
+What we can say is which of \emph{our} tools break. Once a predicate is not a
+congruence condition --- primality, squarefreeness, being a perfect power, a
+digit condition in a base coprime to the branch moduli --- the residue graph
+does not exist, Terras-style class refinement has nothing to refine, and the
+affine bookkeeping behind the cycle equation has no periodic structure to
+lean on. That is a statement about this paper's machinery, not about the
+maps: a non-congruential map may well have arithmetic structure of some other
+kind, and the primality map below has a good deal of it.
 
 \subsection{A worked example: the primality map}
 
@@ -2224,8 +2302,10 @@ $10^{11}$  & $1270$ & $107$  & $8.4\%$ \\
 The density decays, but it sits consistently around $2$--$3$ times the
 $1/\ln n$ one would predict for random integers of that size ($3.6\%$ at
 $10^{12}$) --- the map's odd values are biased towards primes, because
-$(m+1)/2$ and $(3p+1)/2$ avoid small factors more often than a random integer
-does. The bias is real and worth noting; it is also nowhere near enough. At
+$(m+1)/2$ and $(3p+1)/2$ appear to avoid small factors more often than a
+random integer of the same size does. We offer that as a description of what
+we measured, not as an explanation: we have not analysed the distribution of
+small factors along these orbits, and the bias may have another cause. The bias is real and worth noting; it is also nowhere near enough. At
 $10^{12}$ the observed $8.4\%$ must reach $63.1\%$ for divergence, and it is
 falling.
 
@@ -2398,7 +2478,8 @@ about the universe rather than about its presentation.
 \item \textbf{The drifts are heuristics.} $\delta_{\mathrm{odd}} = a/4$ rests
       on $\mathbb{E}[\vtwo(an+b)] = 2$, which assumes an equidistribution that
       is not proved for any particular universe. It predicts nothing about
-      any individual orbit. Tao's result~\cite{tao} is the state of the art on
+      any individual orbit. Tao's result~\cite{tao} is the strongest rigorous
+      statement we know of in this direction, on
       making such heuristics rigorous for $3x+1$, and it falls well short of
       the conjecture.
 
@@ -2478,7 +2559,8 @@ Composite offsets contain a copy of every divisor & Artem
   & Thm.~\ref{thm:strata}, Cor.~\ref{cor:cycdec}: strengthened to an exact
     partition of the phase space and of the cycle set \\
 Cycle counts for $3x+b$, $b < 100$ & Artem
-  & Table~\ref{tab:rowa3}: recomputed at a converged window \\
+  & Table~\ref{tab:rowa3}: recomputed at a wider, empirically stable
+    window \\
 Only powers of $3$ away from a base have one cycle & Artem
   & Cor.~\ref{cor:pow3} \\
 No $b < 100$ gives exactly seven cycles & Artem

@@ -498,7 +498,16 @@ def verify(quick: bool) -> None:
                 ok = False
             if normal_form(*nf) != nf:
                 ok = False
-    rec("T-norm", "normal form is coprime and idempotent", n, ok)
+    # the boundary the theorem excludes: at a = 0 every prime divides a, the
+    # reduction is not defined, and coprimality genuinely fails -- so check
+    # instead that nothing ever asks for it, i.e. that a = 0 is classified
+    # outright as the constant family.
+    for b in range(1, 200):
+        n += 1
+        if classify(0, b).family != Family.CONSTANT:
+            ok = False
+    rec("T-norm", "normal form is coprime and idempotent for a >= 1; a = 0 is "
+        "classified without reduction", n, ok)
 
     # -- Thm: parity runaway.
     n = 0
@@ -799,6 +808,28 @@ def verify(quick: bool) -> None:
     rec("T-resobs", "residue obstruction: escaping residues never divide, and "
         "diverge under the growth condition", n, ok)
 
+    # -- q-ary attracting sublattice: the induced coefficients are PERMUTED.
+    n = 0
+    ok = True
+    for q in (2, 3, 4, 5, 7):
+        for mm in range(2, 8):
+            if math.gcd(mm, q) != 1:
+                continue
+            for aa in qcoeffs(q, 1, 4, 12 if not quick else 4):
+                for bb in qcoeffs(q, 0, 4, 12 if not quick else 4):
+                    A = [mm * x for x in aa]
+                    B = [mm * x for x in bb]
+                    G = QA.QMap(q, A, B)
+                    H = QA.QMap(q,
+                                [A[(mm * j) % q - 1] for j in range(1, q)],
+                                [B[(mm * j) % q - 1] // mm for j in range(1, q)])
+                    for k in range(1, 40):
+                        n += 1
+                        ok &= (G.step(mm * k) % mm == 0)
+                        ok &= (G.step(mm * k) // mm == H.step(k))
+    rec("T-qattract", "attracting sublattice: the induced map has coefficients "
+        "a'_j = a_(mj mod q), b'_j = b_(mj mod q)/m", n, ok)
+
     # -- the primality map of the "beyond modularity" section.
     n = 0
     ok = True
@@ -851,7 +882,8 @@ def verify(quick: bool) -> None:
                     r"$p^{v_p(b)}\mathbb{Z}$",
         "T-rep":    r"$\min(v_p(n), v_p(b))$ is an orbit invariant when "
                     r"$p \mid b$, $p \nmid a$",
-        "T-norm":   r"the normal form is coprime and idempotent",
+        "T-norm":   r"the normal form is coprime and idempotent for "
+                    r"$a \geq 1$; $a = 0$ needs no reduction",
         "T-parity": r"$a+b$ odd with $a,b \geq 1$: no orbit is ever periodic",
         "T-desc":   r"$a=1$, $b$ odd: every orbit cycles, least cycle element "
                     r"$\leq b$",
@@ -885,6 +917,9 @@ def verify(quick: bool) -> None:
                     r"growth condition",
         "T-primmap": r"primality map: every seed tested is eventually periodic, "
                     r"with exactly two cycles",
+        "T-qattract": r"attracting sublattice: the induced coefficients are "
+                    r"$a'_j = a_{mj \bmod q}$, $b'_j = b_{mj \bmod q}/m$ "
+                    r"-- \emph{permuted}",
         "T-tier":   r"knowledge ladder: \textsc{open} $=$ minimal with an open "
                     r"normal form, \textsc{decided} $=$ the $a=1$ row, "
                     r"\textsc{closed} $=$ proved with closed-form cycles",

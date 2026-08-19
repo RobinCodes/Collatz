@@ -3,7 +3,7 @@
 \texttt{T-scale} & $T_{a,db}(dn) = d\,T_{a,b}(n)$ for odd $d$ & $278400$ & \ok \\
 \texttt{T-attr} & $p \mid \gcd(a,b)$ forces every orbit into $p^{v_p(b)}\mathbb{Z}$ & $16059$ & \ok \\
 \texttt{T-rep} & $\min(v_p(n), v_p(b))$ is an orbit invariant when $p \mid b$, $p \nmid a$ & $73632$ & \ok \\
-\texttt{T-norm} & the normal form is coprime and idempotent & $39601$ & \ok \\
+\texttt{T-norm} & the normal form is coprime and idempotent for $a \geq 1$; $a = 0$ needs no reduction & $39800$ & \ok \\
 \texttt{T-parity} & $a+b$ odd with $a,b \geq 1$: no orbit is ever periodic & $29640$ & \ok \\
 \texttt{T-desc} & $a=1$, $b$ odd: every orbit cycles, least cycle element $\leq b$ & $23940$ & \ok \\
 \texttt{T-const} & $a=0$: exactly one cycle, of period $v_2(b)+1$ & $199$ & \ok \\
@@ -23,5 +23,6 @@
 \texttt{T-qscale} & $q$-ary scaling: $F_{q\mathbf a, q\mathbf b}$ refines $F_{\mathbf a,\mathbf b}$ & $80808$ & \ok \\
 \texttt{T-qtwist} & $q$-ary twisted scaling: $n \mapsto dn$ permutes the branches & $510900$ & \ok \\
 \texttt{T-resobs} & escaping residues never divide, and diverge under the growth condition & $92510$ & \ok \\
+\texttt{T-qattract} & attracting sublattice: the induced coefficients are $a'_j = a_{mj \bmod q}$, $b'_j = b_{mj \bmod q}/m$ -- \emph{permuted} & $91260$ & \ok \\
 \texttt{T-primmap} & primality map: every seed tested is eventually periodic, with exactly two cycles & $60000$ & \ok \\
 \texttt{T-neg} & $T_{a,-b}(n) = -T_{a,b}(-n)$ & $9251$ & \ok

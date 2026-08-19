@@ -58,7 +58,8 @@ Two further chapters push outward:
   `prod a_i < q^q`. Rigidity *fails* for `q >= 3`, because scaling permutes
   the branches.
 * **Beyond modularity** — branches chosen by any predicate, not a congruence.
-  The theory applies exactly to *eventually periodic* predicates. For the
+  *Periodic* (congruence) predicates land inside the theory; whether anything
+  else can is an open conjecture, not a theorem. For the
   primality map `3n+1` if prime, `n/2` if even, `n+1` otherwise, divergence
   would need **63.09%** (`ln2/ln3`) of the odd values visited to be prime;
   the measured figure falls to **8.4% at 10^11** — though still ~2.3× the
