@@ -1,6 +1,8 @@
 Average relative peak (geometric mean of max(orbit(n))/n) and average path length,
 over seeds n = 1..5000.
 'RUN' = every seed exceeded the value or step budget (runaway).
+'counted' = percentage of the seeds that stayed inside the
+budget; the means are over those seeds only.
 ==============================================================================
 
 AVERAGE RELATIVE PEAK
@@ -26,3 +28,15 @@ AVERAGE PATH LENGTH
     6       RUN      RUN   104.33      RUN      RUN      RUN    87.55      RUN      RUN
     7       RUN    14.87      RUN    12.96      RUN    42.47      RUN    15.27      RUN
     8      4.12      RUN      RUN      RUN      RUN      RUN      RUN      RUN    33.97
+
+PERCENTAGE OF SEEDS COUNTED
+  a\b         0        1        2        3        4        5        6        7        8
+    0    100.0%   100.0%   100.0%   100.0%   100.0%   100.0%   100.0%   100.0%   100.0%
+    1    100.0%   100.0%      RUN   100.0%      RUN   100.0%      RUN   100.0%      RUN
+    2    100.0%      RUN   100.0%      RUN      RUN      RUN   100.0%      RUN      RUN
+    3       RUN   100.0%      RUN   100.0%      RUN   100.0%      RUN   100.0%      RUN
+    4    100.0%      RUN      RUN      RUN   100.0%      RUN      RUN      RUN      RUN
+    5       RUN     9.3%      RUN     8.2%      RUN    16.8%      RUN    27.0%      RUN
+    6       RUN      RUN   100.0%      RUN      RUN      RUN   100.0%      RUN      RUN
+    7       RUN     1.4%      RUN     1.0%      RUN     7.6%      RUN     4.8%      RUN
+    8    100.0%      RUN      RUN      RUN      RUN      RUN      RUN      RUN   100.0%

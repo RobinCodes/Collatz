@@ -1443,13 +1443,23 @@ class MultiverseWindow(tk.Toplevel):
             add("")
             add("  Measured density of primes among odd TRANSIENT values")
             add("  (cycles excluded -- they are short and prime-rich, and")
-            add("   counting them makes the density look alarmingly high):")
+            add("   counting them makes the density look alarmingly high).")
+            add("  Each row is its own block of seeds, drawn just above its")
+            add("  floor, so the counts are NOT nested -- only the densities")
+            add("  are comparable down the column:")
             add("")
             add(f"     {'above':>12} {'odd seen':>10} {'prime':>8} {'density':>9}"
                 f" {'1/ln n':>9}")
-            for lo, hi, floor in [(1, 4000, 10 ** 3), (10 ** 5, 10 ** 5 + 2500, 10 ** 4),
+            # each row is its OWN block of seeds, drawn just above the floor
+            # it reports: an orbit from a small seed never reaches 1e8, so a
+            # single seed range cannot fill this table.  Same bands as
+            # PRIME_BANDS in Multiverse/generate_data.py, which produces the
+            # version of this table printed in the paper.
+            for lo, hi, floor in [(1, 4000, 10 ** 3),
+                                  (10 ** 5, 10 ** 5 + 2500, 10 ** 4),
                                   (10 ** 7, 10 ** 7 + 1800, 10 ** 6),
-                                  (10 ** 9, 10 ** 9 + 1200, 10 ** 8)]:
+                                  (10 ** 9, 10 ** 9 + 1200, 10 ** 8),
+                                  (10 ** 12, 10 ** 12 + 900, 10 ** 11)]:
                 tot = pr = 0
                 stp = max(1, (hi - lo) // 900)
                 for sdd in range(lo, hi, stp):

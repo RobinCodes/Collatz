@@ -70,6 +70,9 @@
 \newcommand{\Ccoef}{C}
 \newcommand{\reaches}{\mathsf{reaches1}}
 \newcommand{\Rlev}{\mathcal{R}}
+% the algorithm names appear inside italic proposition bodies, and Latin
+% Modern has no small-caps italic
+\newcommand{\alg}[1]{\textnormal{\textsc{#1}}}
 \newcommand{\Slev}{\mathcal{S}}
 
 \begin{document}
@@ -121,7 +124,7 @@ The Collatz conjecture asserts that iterating
   \end{cases}
 \]
 from any positive integer eventually reaches $1$. It remains open; computational
-searches have confirmed it for all $n$ below roughly $2^{68}$.
+searches have confirmed it for all $n$ below roughly $2^{71}$~\cite{barina}.
 
 A standard partial attack is the \emph{residue sieve} of Terras~\cite{terras}
 and Everett~\cite{everett}. Because the first $q$ steps of the accelerated map
@@ -330,7 +333,7 @@ score equals $q$. Since $d \geq 1$, the score strictly increases.
 \end{proof}
 
 \begin{proposition}[(P2)]\label{prop:eval}
-For odd $n$ and every $q \geq 0$, $\textsc{Eval}(n,q) = \Tmap^{q}(n)$.
+For odd $n$ and every $q \geq 0$, $\alg{Eval}(n,q) = \Tmap^{q}(n)$.
 \end{proposition}
 
 \begin{proof}
@@ -744,10 +747,12 @@ Closed under the global context     (x8)
 \section{Computed data}
 \label{sec:data}
 
-Table~\ref{tab:data} lists the program's output for $q \leq 24$. The survivor
-counts reproduce the classical Terras sieve counts, and the residue sets agree
-elementwise with an independent step-by-step implementation of $\Tmap$ that
-shares no code with the bit-twiddling version.
+Table~\ref{tab:data} lists the program's output for $q \leq 24$; the run itself
+is committed as \texttt{output.txt} beside the program, so the table can be
+checked line by line against it. The survivor counts reproduce the classical
+Terras sieve counts, and the residue sets agree elementwise with an
+independent step-by-step implementation of $\Tmap$ that shares no code with
+the bit-twiddling version.
 
 \begin{table}[htb]
 \centering
@@ -880,6 +885,12 @@ J.~C.~Lagarias, editor.
 T.~Tao.
 \newblock Almost all orbits of the Collatz map attain almost bounded values.
 \newblock \emph{Forum of Mathematics, Pi}, 10:e12, 2022.
+
+\bibitem{barina}
+D.~Barina.
+\newblock Improved verification limit for the convergence of the Collatz
+  conjecture.
+\newblock \emph{The Journal of Supercomputing}, 2025.
 
 \bibitem{rocq}
 The Rocq Development Team.

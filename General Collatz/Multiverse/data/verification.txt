@@ -19,7 +19,7 @@ T-Zhalf    PASS          3660 cases   Z>0 invariant iff a+b >= 1; Z<0 invariant 
 T-Zcross   PASS       1415200 cases   sign changes only at odd n with |n| <= |b|/a
 T-one      PASS          3481 cases   1 lies on a cycle iff the orbit of 1 meets a power of two
 T-onestep  PASS           673 cases   a + b = 2^k gives a cycle through 1 of period k+1
-T-desc2b   PASS           381 cases   every cycle of x+b is contained in [1, 2b]
+T-desc2b   PASS           458 cases   every cycle of x+b is contained in [1, 2b]
 T-seedscale PASS           104 cases   n on a cycle of ax+b => mn on a cycle of ax+mb for ODD m
 T-noconj   PASS           104 cases   cC is NEVER a cycle of T_(ca,cb) (the refuted conjugacy)
 T-radical  PASS          7140 cases   nf(a,b) = (a,1) iff rad(b) | a  (b odd)
@@ -27,7 +27,9 @@ T-qscale   PASS         80808 cases   q-ary scaling: F_(qa,qb) refines F_(a,b)
 T-qtwist   PASS        510900 cases   q-ary twisted scaling: n -> dn permutes the branches
 T-resobs   PASS         92510 cases   residue obstruction: escaping residues never divide, and diverge under the growth condition
 T-qattract PASS         91260 cases   attracting sublattice: the induced map has coefficients a'_j = a_(mj mod q), b'_j = b_(mj mod q)/m
-T-primmap  PASS         60000 cases   primality map: every seed tested is eventually periodic, with exactly two cycles
+T-primmap  PASS        200000 cases   primality map: every seed tested is eventually periodic, with exactly two cycles
+T-km       PASS             4 cases   3x+5 has cycles with (k,m) = (3,5) and (17,27), and every cycle has 2^m > a^k
+T-peak     PASS             3 cases   b = 0, a = 2^t: geometric mean relative peak is 2^(t-1+2^-t)
 T-neg      PASS          9251 cases   negation duality: -T_{a,b}(n) = T_{a,-b}(-n)
 
-27/27 checks pass
+29/29 checks pass

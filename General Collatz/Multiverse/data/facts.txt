@@ -1,0 +1,59 @@
+Inline figures quoted in the paper's prose
+==========================================================================
+
+  CfourAHi                 39
+  CfourALo                 3
+  CfourBHi                 39
+  CfourSeedHi              600
+  CfourViol                eight
+  DescB                    159
+  DescCycles               458
+  DescSharp                80
+  EvenMCases               140
+  EvenMFail                140
+  GrowthRowTwoSix          1.421
+  GrowthRowTwoTwo          1.417
+  GrowthRowTwoZero         1.414
+  GrowthSeeds              5{,}000
+  GrowthWorstCounted       1
+  KmOne                    3, 5
+  KmTwo                    17, 27
+  NoconjCases              104
+  NoconjHits               0
+  OneAMax                  200
+  OneBMax                  60
+  OneOther                 54
+  OnePow                   93
+  OneTotal                 147
+  PeakDigits               six
+  PeakN                    200{,}000
+  PeakOne                  1.414214
+  PeakThree                4.362031
+  PeakTwo                  2.378414
+  PrimCycleCount           two
+  PrimPeak                 3.1 \times 10^{6}
+  PrimSeeds                200{,}000
+  PrimeDensRatio           2.2
+  PrimeDensTop             8.6
+  PrimeDensTopFloor        10^{11}
+  PrimeDensTopRef          3.9
+  PrimeDensWholeHi         79
+  PrimeDensWholeLo         52
+  QDriftHigh               1.139
+  QDriftLow                0.577
+  ResobsGrowth             27{,}948
+  ResobsOrbits             92{,}510
+  ResobsQ                  5
+  RowMoved                 0
+  RowSeeds                 20{,}000
+  RowSteps                 200{,}000
+  RowThreeMissing          $7$, $12$, $13$, $15$
+  RowThreeValues           $1$, $2$, $3$, $4$, $5$, $6$, $8$, $9$, $10$, $11$, $14$ and $16$
+  RowWide                  100{,}000
+  ScaleCases               104
+  ScaleHits                104
+  WindowB                  71
+  WindowNarrow             3{,}000
+  WindowNarrowCyc          7
+  WindowWide               20{,}000
+  WindowWideCyc            8

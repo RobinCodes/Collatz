@@ -62,8 +62,11 @@ Two further chapters push outward:
   else can is an open conjecture, not a theorem. For the
   primality map `3n+1` if prime, `n/2` if even, `n+1` otherwise, divergence
   would need **63.09%** (`ln2/ln3`) of the odd values visited to be prime;
-  the measured figure falls to **8.4% at 10^11** — though still ~2.3× the
-  random `1/ln n`, so the naive "primes have density 0" argument is too glib.
+  the measured figure falls to single digits above `10^11` — though still a
+  few times the random `1/ln n`, so the naive "primes have density 0"
+  argument is too glib. Each row of that density table is its own block of
+  seeds, drawn just above the floor it reports: no orbit from a seed below
+  `200,000` ever exceeds ~`3.1e6`, so one seed range cannot fill the table.
   All 200,000 seeds tested are eventually periodic, into exactly two cycles.
 
 Three conjectures from the earlier research programme are refuted in the
@@ -91,12 +94,15 @@ python3 literature.py --refresh       #   ... re-downloading it first
 The paper is a **single self-contained `.tex`** with no `\input` of external
 files, so it compiles on any online LaTeX renderer as a one-file upload.
 `inline_tables.py` refreshes the tables in place between marker comments, so
-nothing is hand-transcribed.
+nothing is hand-transcribed — and the figures quoted in the *prose* are
+`\newcommand`s generated into `data/facts.tex` by the same run, so every
+measured number in the paper is refreshed by the command that produces it.
 
 The interactive version is the **Multiverse** button in
 `General Collatz/Collatz Program/Collatz_Program.py`: a clickable
 classification grid, per-universe reports, a cycle census showing the divisor
-decomposition, a side-by-side symmetry explorer, and heat maps.
+decomposition, a side-by-side symmetry explorer, heat maps, the q-ary residue
+graph, and the predicate-map workbench.
 
 The grid offers four views, because family alone is not enough to colour by —
 `2x+2` and `6x+2` are both halving-reducible, but the first reduces to the

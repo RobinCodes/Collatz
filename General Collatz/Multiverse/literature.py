@@ -146,14 +146,67 @@ def _deunicode(s: str) -> str:
     return "".join(out)
 
 
+#: maths macros we are willing to pass through to LaTeX untouched.  The paper
+#: loads amsmath/amssymb, so all of these typeset; anything outside the list is
+#: reduced to its bare letters as before, which is safe but lossy.
+_MATH_OK = set(r"""
+alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa
+lambda mu nu xi pi varpi rho varrho sigma varsigma tau upsilon phi varphi chi
+psi omega Gamma Delta Theta Lambda Xi Pi Sigma Upsilon Phi Psi Omega
+leq geq le ge neq ne equiv approx sim simeq cong propto ll gg pm mp times cdot
+div ast star circ bullet oplus otimes cap cup setminus subset subseteq supset
+supseteq in notin ni forall exists infty partial nabla emptyset
+to rightarrow leftarrow mapsto Rightarrow Leftarrow leftrightarrow
+Leftrightarrow ldots cdots dots vdots ddots prime ell Re Im aleph
+pmod bmod mod gcd lcm max min sup inf lim limsup liminf log ln exp sin cos tan
+deg dim ker det frac sqrt sum prod int oint bigcup bigcap
+left right big Big bigg Bigg langle rangle lfloor rfloor lceil rceil
+mathbb mathbf mathcal mathrm mathit mathsf mathtt text operatorname hbox mbox
+overline underline widehat hat tilde bar vec dot ddot pounds quad qquad
+""".split())
+
+_KEEP = "\x01"          # sentinel wrapping a whitelisted macro name
+
+
+def _math_reduce(seg: str) -> str:
+    r"""Last-resort flattening of a maths segment: every macro becomes its own
+    letters and all grouping disappears.  Used only when the segment cannot be
+    passed through safely (unbalanced braces)."""
+    seg = re.sub(r"\\(?:mathbb|mathbf|mathcal|mathrm|mathit|mathsf|text"
+                 r"|operatorname|hbox|mbox)\s*\{([^{}]*)\}", r"\1", seg)
+    seg = re.sub(r"\\([a-zA-Z]+)\s*", r"\1 ", seg)
+    return seg.replace("{", "").replace("}", "").replace("\\", "")
+
+
+def _math_pass(seg: str) -> str:
+    r"""Typeset a maths segment, keeping the macros we recognise.
+
+    An earlier version deleted every backslash here, which turned
+    "$m \leq 91$" into "$m leq 91$" and "$\pounds$" into "$pounds$" in the
+    printed bibliography.  Now a whitelisted macro survives verbatim and only
+    an unrecognised one is flattened to its letters.
+    """
+    if seg.count("{") != seg.count("}"):
+        return _math_reduce(seg)
+    kept = re.sub(r"\\([a-zA-Z]+)",
+                  lambda m: (_KEEP + m.group(1) + _KEEP
+                             if m.group(1) in _MATH_OK else m.group(0)),
+                  seg)
+    # anything still carrying a backslash is a macro we do not vouch for
+    kept = re.sub(r"\\([a-zA-Z]+)\s*", r"\1 ", kept)
+    # the sentinels stay in place: tex_escape strips every remaining backslash
+    # from the whole string a few lines further on, so the whitelisted macros
+    # can only be restored once that has happened.
+    return kept.replace("\\", "")
+
+
 def tex_escape(s: str) -> str:
     r"""Make a catalogue title safe to typeset.
 
     Titles arrive as BibTeX fragments, so they mix plain text with maths and
     assume packages we cannot know.  The strategy is to keep $...$ segments as
-    maths but reduce every macro inside them to plain letters:
-    "$\mathbb{Z}_2$" becomes "$Z_2$", "$\beta$-transformations" becomes
-    "$beta$-transformations".  Literal escaped dollars (prices!) are protected
+    maths, passing through the macros of `_MATH_OK` and reducing any other
+    macro to plain letters.  Literal escaped dollars (prices!) are protected
     first, since otherwise they are mistaken for maths delimiters.
     """
     SENT = "\x00DOLLAR\x00"
@@ -161,15 +214,8 @@ def tex_escape(s: str) -> str:
 
     parts = s.split("$")
     for k in range(1, len(parts), 2):                 # maths segments
-        seg = parts[k]
-        # \mathbb{Z} and friends -> Z
-        seg = re.sub(r"\\(?:mathbb|mathbf|mathcal|mathrm|mathit|mathsf|text"
-                     r"|operatorname|hbox|mbox)\s*\{([^{}]*)\}", r"\1", seg)
-        # any remaining macro -> its name as letters (\beta -> beta)
-        seg = re.sub(r"\\([a-zA-Z]+)\s*", r"\1", seg)
-        seg = seg.replace("{", "").replace("}", "").replace("\\", "")
-        parts[k] = seg
-    # a macro-only segment is now empty; drop the delimiters rather than
+        parts[k] = _math_pass(parts[k])
+    # a macro-only segment may now be empty; drop the delimiters rather than
     # emitting "$$", which LaTeX reads as display maths
     out = [parts[0]]
     for k in range(1, len(parts), 2):
@@ -193,16 +239,63 @@ def tex_escape(s: str) -> str:
     for k in range(0, len(parts), 2):
         parts[k] = parts[k].replace("^", r"\^{}").replace("~",
                                                           r"\textasciitilde{}")
-    return "$".join(parts).replace(SENT, r"\$")
+    s = "$".join(parts).replace(SENT, r"\$")
+    return re.sub(_KEEP + r"([a-zA-Z]+)" + _KEEP, r"\\\1 ", s)
+
+
+#: lowercase nobiliary particles that belong to the surname
+_PARTICLES = {"van", "von", "de", "del", "della", "der", "den", "da", "di",
+              "du", "la", "le", "ten", "ter"}
+
+
+def _surnames(field: str) -> list:
+    r"""Every surname in a BibTeX-ish author field, in order.
+
+    Three conventions appear in the catalogue and all three must be handled:
+
+        "Ethan Akin"                          First Last
+        "Zarnowski, Roger E."                 Last, First
+        "Wang, X.; Wang, Q.; and Xu, Z."      semicolon-separated Last, First
+        "R. Blecksmith, M. McCallum, and J. Selfridge"   comma-separated list
+
+    Splitting on every comma -- which an earlier version did -- turned
+    "Zarnowski, Roger E." into two authors and printed "Zarnowski \& E.".
+    The discriminator is what sits *before* the comma: a single token (plus
+    any nobiliary particle) means "Last, First"; anything longer means the
+    comma is separating whole names.
+    """
+    out = []
+    for group in field.split(";"):
+        for frag in re.split(r"\s+and\s+", group.strip()):
+            frag = re.sub(r"^and\s+", "", frag.strip()).strip().strip(",")
+            if not frag or frag.lower().startswith("et al"):
+                continue
+            head = frag.split(",", 1)[0].strip()
+            toks = head.split()
+            inverted = ("," in frag and toks
+                        and (len(toks) == 1
+                             or all(t.lower() in _PARTICLES
+                                    for t in toks[:-1])))
+            if inverted:
+                out.append(head)
+            else:
+                for one in frag.split(","):
+                    one = one.strip()
+                    if one:
+                        out.append(one.split()[-1])
+    return out
 
 
 def short_authors(a: str) -> str:
-    parts = [p.strip() for p in re.split(r",| and ", a) if p.strip()]
-    if not parts:
+    """Surname, "X \\& Y" or "X et al." for a catalogue author field."""
+    names = _surnames(a or "")
+    if not names:
         return "?"
-    last = parts[0].split()[-1]
-    return last + (" et al." if len(parts) > 2 else
-                   (" \\& " + parts[1].split()[-1] if len(parts) == 2 else ""))
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return names[0] + " \\& " + names[1]
+    return names[0] + " et al."
 
 
 def emit(items, cat, claims):
@@ -243,14 +336,25 @@ def emit(items, cat, claims):
         t = _deunicode(i["title"])
         if len(t) > 68:
             t = t[:66].rstrip()
-            if t.count("$") % 2:      # balance before the ellipsis so the
-                t += "$"              # "..." is not swallowed into maths
+            if t.count("$") % 2:
+                # the cut landed inside maths.  Closing it with a bare "$"
+                # would leave a half-written macro ("$\\mathbb$"), so drop the
+                # incomplete fragment instead.
+                t = t[:t.rfind("$")].rstrip()
             t += " ..."
         lines.append(r"%s & %s & %s & %s \\" %
                      (tag, tex_escape(short_authors(i["authors"])),
                       i.get("year", "?"), tex_escape(t)))
     open(os.path.join(DATA, "lit_corpus.tex"), "w", encoding="utf-8").write(
         "%% generated by literature.py -- do not edit\n" + "\n".join(lines) + "\n")
+
+    # ---- inline figures the paper quotes about the corpus ----
+    facts = [r"\newcommand{\FactCorpusN}{%d}" % len(allp),
+             r"\newcommand{\FactCorpusGen}{%d}"
+             % len(cat.get("generalised maps", [])),
+             r"\newcommand{\FactCorpusClaims}{%d}" % len(claims)]
+    open(os.path.join(DATA, "litfacts.tex"), "w", encoding="utf-8").write(
+        "%% generated by literature.py -- do not edit\n" + "\n".join(facts) + "\n")
 
     # ---- plain text report ----
     rep = ["ccchallenge.org corpus, classified", "=" * 74, "",
@@ -270,7 +374,7 @@ def emit(items, cat, claims):
     print(f"  {len(items)} papers, {len(gen)} in the generalised-map class, "
           f"{len(claims)} unrefereed proof claims")
     for f in ("lit_domains.tex", "lit_generalised.tex", "lit_corpus.tex",
-              "literature.txt"):
+              "litfacts.tex", "literature.txt"):
         print(f"  wrote data/{f}")
 
 

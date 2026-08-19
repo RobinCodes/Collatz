@@ -39,6 +39,12 @@ PAPER = os.path.normpath(os.path.join(HERE, "..", "paper",
 BEGIN = "% >>>BEGIN-DATA "
 END = "% <<<END-DATA "
 
+#: blocks whose body is not a run of tabular rows, and which must therefore
+#: NOT have the row separator restored after them: `grid` ships a whole
+#: tabular, `facts` is a run of \newcommand definitions, and `primcycles` is
+#: an align* body whose last line must not end in "\\".
+NO_ROW_TAIL = {"grid", "facts", "litfacts", "primcycles"}
+
 #: an \input we still recognise, so the one-time conversion is automatic
 INPUT_RE = re.compile(
     r"[ \t]*\\input\{(?:\.\./Multiverse/data/|tables/|data/)([A-Za-z0-9_]+)\.tex\}"
@@ -68,7 +74,7 @@ def convert_inputs(text: str) -> tuple[str, int]:
         name = m.group(1)
         # grid.tex ships a whole tabular; the row-only tables need the \\
         # that used to sit after the \input restored inside the block.
-        tail = "" if name == "grid" else " \\\\"
+        tail = "" if name in NO_ROW_TAIL else " \\\\"
         return (f"{BEGIN}{name}\n{_body(name)}{tail}\n{END}{name}\n")
 
     return INPUT_RE.sub(sub, text), count
@@ -89,7 +95,7 @@ def refresh(text: str) -> tuple[str, int]:
                 j += 1
             if j >= len(lines):
                 raise SystemExit(f"unterminated data block '{name}'")
-            tail = "" if name == "grid" else " \\\\"
+            tail = "" if name in NO_ROW_TAIL else " \\\\"
             out.append(line)
             out.append(_body(name) + tail + "\n")
             out.append(lines[j])

@@ -391,7 +391,8 @@ def reduction_chain(a: int, b: int) -> Tuple[Tuple[int, int], List[Reduction]]:
                 nxt = (ca, cb // d)
                 chain.append(Reduction(
                     "attraction", cur, nxt, d,
-                    f"every orbit enters {d}Z after at most {e} odd steps; "
+                    f"every orbit enters {d}Z after at most {e} odd "
+                    f"step{'' if e == 1 else 's'}; "
                     f"on {d}Z the map is n -> {d}*({nxt[0]}x{nxt[1]:+d})(n/{d})"))
                 cur = nxt
                 continue
